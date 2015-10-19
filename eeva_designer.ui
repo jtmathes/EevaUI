@@ -159,7 +159,14 @@
             </widget>
            </item>
            <item row="1" column="1">
-            <widget class="QLineEdit" name="txPacketsLineEdit"/>
+            <widget class="QLineEdit" name="txPacketsLineEdit">
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
            <item row="1" column="2">
             <widget class="QLabel" name="label_22">
@@ -169,10 +176,24 @@
             </widget>
            </item>
            <item row="1" column="3">
-            <widget class="QLineEdit" name="lineEdit_9"/>
+            <widget class="QLineEdit" name="txBPSLineEdit">
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
            <item row="0" column="3">
-            <widget class="QLineEdit" name="rxBPSLineEdit"/>
+            <widget class="QLineEdit" name="rxBPSLineEdit">
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
            <item row="0" column="2">
             <widget class="QLabel" name="label_21">
@@ -189,7 +210,14 @@
             </widget>
            </item>
            <item row="0" column="1">
-            <widget class="QLineEdit" name="rxPacketsLineEdit"/>
+            <widget class="QLineEdit" name="rxPacketsLineEdit">
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
            <item row="2" column="0">
             <widget class="QLabel" name="label_47">
@@ -199,7 +227,14 @@
             </widget>
            </item>
            <item row="2" column="1">
-            <widget class="QLineEdit" name="badCRCLineEdit"/>
+            <widget class="QLineEdit" name="badCRCLineEdit">
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
            <item row="2" column="2">
             <widget class="QLabel" name="label_48">
@@ -209,7 +244,14 @@
             </widget>
            </item>
            <item row="2" column="3">
-            <widget class="QLineEdit" name="droppedLineEdit"/>
+            <widget class="QLineEdit" name="droppedLineEdit">
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
           </layout>
          </widget>
@@ -459,6 +501,9 @@
                </property>
                <property name="text">
                 <string>Data File Name</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
                </property>
               </widget>
              </item>

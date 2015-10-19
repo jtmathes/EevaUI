@@ -35,9 +35,11 @@ crc_table = (
     0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0xed1, 0x1ef0
 )
 
-def calculate_crc(buffer, init=0xFFFF):
+def calculate_crc(data_buffer, buffer_stop, init=0xFFFF):
     ''' Return 16-bit CRC with CCITT polynomial 0x1021 '''
     crc = init
-    for byte in buffer:
-        crc = ((crc << 8) & 0xff00) ^ crc_table[((crc >> 8) ^ byte) & 0xFF]
+    
+    for idx in range(buffer_stop):
+        crc = ((crc << 8) & 0xff00) ^ crc_table[((crc >> 8) ^ data_buffer[idx]) & 0xFF]
+        
     return crc

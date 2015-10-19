@@ -30,10 +30,12 @@ class SerialConnection(serial.Serial):
         return serial.Serial.isOpen(self) and not self.close_request.is_set()
     
     def run(self):
+        
+        self.timeout = 0.5
 
         while True:
         
-            new_data = serial.Serial.read(self)
+            new_data = bytearray(serial.Serial.read(self))
             
             if new_data and len(new_data) > 0:
                 self.receive_queue.put(new_data)

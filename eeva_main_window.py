@@ -42,3 +42,22 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
     def display_message(self, message, color):
         
         self.messageCenterTextEdit.append(message)
+
+    # Robot Status
+    def set_pitch_angle(self, new):
+        self.pitchLineEdit.setText('{:.1f}'.format(new))
+
+    # Connection Status
+    def set_num_msgs_sent(self, new):
+        self.txPacketsLineEdit.setText(str(new))
+    def set_num_msgs_received(self, new):
+        self.rxPacketsLineEdit.setText(str(new))
+    def set_bps_sent(self, new):
+        self.txBPSLineEdit.setText(str(new))
+    def set_bps_received(self, new):
+        self.rxBPSLineEdit.setText(str(new))
+    def set_bad_crc(self, new):
+        self.badCRCLineEdit.setText(str(new))
+    def set_dropped_msgs(self, new):
+        self.droppedLineEdit.setText(str(new))
+
