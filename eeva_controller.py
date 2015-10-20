@@ -5,6 +5,13 @@ from glob import *
 
 from PyQt4.QtCore import QTimer 
 
+DEFAULT_NUM_SAMPLES = 300
+MIN_NUM_SAMPLES = 1
+MAX_NUM_SAMPLES = 2000
+FASTEST_CAPTURE_RATE = 10000.0 # Hz
+DEFAULT_CAPTURE_RATE = FASTEST_CAPTURE_RATE / 100 # Hz
+LINK_STATS_TIMER_INTERVAL = 1 # seconds
+
 class EevaController:
 
     def __init__(self, link):
@@ -15,27 +22,62 @@ class EevaController:
         # fields for tracking link stats
         self.last_bytes_tx = 0
         self.last_bytes_rx = 0
+        
+        # list of actively received capture data (cleared after writing to file)
+        self.capture_data = []
 
     def set_view(self, view):
         
         self.view = view
         
-        self.request_new_port_list()
+        self.initialize_view(view)
         
         # start link status timer
         self.link_timer_elapsed()
         
-    def link_timer_elapsed(self):
+    def initialize_view(self, view):
         
-        timer_period = 1 # seconds
-        try:
+        self.request_new_port_list()
+        
+        self.view.set_capture_rate(DEFAULT_CAPTURE_RATE)
+        self.view.set_capture_samples(DEFAULT_NUM_SAMPLES)
+        self.validate_capture_parameters()
+        
+    def start_data_capture(self):
+        
+        rate = float(self.view.get_capture_rate())
+        samples = int(self.view.get_capture_samples())
+        msg = CaptureCommand(is_start=1, freq=rate, desired_samples=samples)
+        self.link.send(msg)
+        
+    def validate_capture_parameters(self):
+        
+        rate = self.try_parse(self.view.get_capture_rate(), float, DEFAULT_CAPTURE_RATE)
+        rate = self.limit(rate, 0.001, FASTEST_CAPTURE_RATE)
+        samples = self.try_parse(self.view.get_capture_samples(), int, DEFAULT_NUM_SAMPLES)
+        samples = self.limit(samples, MIN_NUM_SAMPLES, MAX_NUM_SAMPLES)
 
+        # Account for the fact the MCU can only capture at certain rates.  
+        scale = int(FASTEST_CAPTURE_RATE / rate)
+        rate = FASTEST_CAPTURE_RATE / scale
+
+        duration = samples / rate
+
+        self.view.set_capture_rate(rate)
+        self.view.set_capture_samples(samples)
+        self.view.set_capture_duration(duration)
+        
+        return duration
+        
+    def link_timer_elapsed(self):
+
+        try:
             bytes_tx = self.link.num_messages_sent
             bytes_rx = self.link.num_messages_received
 
             # Estimate bytes per second.  Assume timer actually elapses close to desired rate.
-            bps_tx = max(0, int((bytes_tx - self.last_bytes_tx) / timer_period))
-            bps_rx = max(0, int((bytes_rx - self.last_bytes_rx) / timer_period))
+            bps_tx = max(0, int((bytes_tx - self.last_bytes_tx) / LINK_STATS_TIMER_INTERVAL))
+            bps_rx = max(0, int((bytes_rx - self.last_bytes_rx) / LINK_STATS_TIMER_INTERVAL))
             
             self.view.set_num_msgs_sent(bytes_tx)
             self.view.set_num_msgs_received(bytes_rx)
@@ -47,13 +89,10 @@ class EevaController:
             # Save so can calculate bytes per second next time
             self.last_bytes_tx = bytes_tx
             self.last_bytes_rx = bytes_rx
-            
-            test_glob = DrivingCommand(movement_type=0)
-            self.link.send(test_glob)
-        
+
         finally:
             # Constantly reschedule timer to avoid overlapping calls
-            QTimer.singleShot(timer_period * 1000, self.link_timer_elapsed)
+            QTimer.singleShot(LINK_STATS_TIMER_INTERVAL * 1000, self.link_timer_elapsed)
         
     def connect_to_port(self, port_name):
         
@@ -86,6 +125,35 @@ class EevaController:
             msg = StatusData.from_bytes(body)
             self.view.set_pitch_angle(math.degrees(msg.tilt))
             
+        if id == GlobID.CaptureData:
+            
+            msg = CaptureData.from_bytes(body)
+            
+            if len(self.capture_data) == 0:
+                self.display_message('Receiving data...')
+                
+            self.capture_data.append(msg)
+            
+        if id == GlobID.CaptureCommand:
+            msg = CaptureCommand.from_bytes(body)
+            expected_samples = msg.total_samples
+            
+            if len(self.capture_data) == 0 and expected_samples == 0:
+                self.display_message("No data was recorded by robot.")
+                return # nothing left to do since no data
+            elif len(self.capture_data) == 0:
+                self.display_message("Expecting {} samples but didn't receive any.".format(expected_samples))
+                return # nothing left to do since no data
+            elif len(self.capture_data) == expected_samples:
+                self.display_message("Received all {} samples.".format(expected_samples))
+            elif len(self.capture_data) < expected_samples:
+                self.display_message("Only received {} of {} samples.".format(len(self.capture_data), expected_samples))
+            else: # Received more data than expected.
+                self.display_message("Received too many samples ({}). Only expecting {}.".format(len(self.capture_data), expected_samples))
+            
+            # TODO call stop data capture and write to file
+            self.capture_data = []
+            
     def request_new_port_list(self):
         
         self.display_message('Refreshing ports')
@@ -100,4 +168,22 @@ class EevaController:
         color = 'black'
 
         self.view.display_message(message, color)
+        
+    def limit(self, val, min_val, max_val):
+        
+        val_type = type(val)
+        if val > max_val:
+            return val_type(max_val)
+        if val < min_val:
+            return val_type(min_val)
+        return val
+    
+    def try_parse(self, value, cast_type, default_value):
+        
+        try:
+            value = cast_type(value)
+        except ValueError:
+            value = default_value
+        return value
+        
         

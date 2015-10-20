@@ -14,9 +14,25 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         
         self.controller = controller
         
-        self.connectButton.clicked.connect(self.connect_button_clicked)
+        # Main Command Buttons
+        self.collectDataButton.clicked.connect(self.collect_data_button_clicked)
         
+        # Connection
+        self.connectButton.clicked.connect(self.connect_button_clicked)
         self.refreshPortsButton.clicked.connect(self.refresh_ports_button_clicked)
+
+        # Data Capture
+        self.sampleRateTextEdit.editingFinished.connect(self.sample_rate_changed)
+        self.sampleCountTextEdit.editingFinished.connect(self.capture_samples_edited)
+
+    def collect_data_button_clicked(self):
+        self.controller.start_data_capture()
+
+    def sample_rate_changed(self, *args):
+        self.controller.validate_capture_parameters()
+    
+    def capture_samples_edited(self, *args):
+        self.controller.validate_capture_parameters()
 
     def connect_button_clicked(self):
         
@@ -46,6 +62,20 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
     # Robot Status
     def set_pitch_angle(self, new):
         self.pitchLineEdit.setText('{:.1f}'.format(new))
+
+    # Data Capture
+    def set_capture_rate(self, new):
+        self.sampleRateTextEdit.setText(str(round(new, 3)))
+    def set_capture_duration(self, new):
+        self.durationLineEdit.setText('{:.5g}'.format(new))
+    def set_capture_samples(self, new):
+        self.sampleCountTextEdit.setText(str(int(new)))
+    def get_capture_rate(self):
+        return self.sampleRateTextEdit.text()
+    def get_capture_duration(self):
+        return self.durationLineEdit.text()
+    def get_capture_samples(self):
+        return self.sampleCountTextEdit.text()
 
     # Connection Status
     def set_num_msgs_sent(self, new):
