@@ -25,6 +25,9 @@ class EevaController:
         
         # list of actively received capture data (cleared after writing to file)
         self.capture_data = []
+        
+        # What different message sources show as which color.
+        self.source_display_colors = {'ui':'black', 'robot':'blue', 'assert':'red'}
 
     def set_view(self, view):
         
@@ -121,11 +124,19 @@ class EevaController:
     
     def new_message_callback(self, id, instance, body):
         
-        if id == GlobID.StatusData:
+        if id == GlobID.AssertMessage:
+            msg = AssertMessage.from_bytes(body)
+            self.display_message(msg.message, 'assert')
+        
+        elif id == GlobID.DebugMessage:
+            msg = DebugMessage.from_bytes(body)
+            self.display_message(msg.message, 'robot')
+        
+        elif id == GlobID.StatusData:
             msg = StatusData.from_bytes(body)
             self.view.set_pitch_angle(math.degrees(msg.tilt))
             
-        if id == GlobID.CaptureData:
+        elif id == GlobID.CaptureData:
             
             msg = CaptureData.from_bytes(body)
             
@@ -134,7 +145,7 @@ class EevaController:
                 
             self.capture_data.append(msg)
             
-        if id == GlobID.CaptureCommand:
+        elif id == GlobID.CaptureCommand:
             msg = CaptureCommand.from_bytes(body)
             expected_samples = msg.total_samples
             
@@ -165,7 +176,7 @@ class EevaController:
     
     def display_message(self, message, source='ui'):
 
-        color = 'black'
+        color = self.source_display_colors.get(source, 'black')
 
         self.view.display_message(message, color)
         

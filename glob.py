@@ -3,6 +3,8 @@ import struct
 
 class GlobID:
     
+    AssertMessage = 0
+    DebugMessage = 1
     CaptureData = 2
     DrivingCommand = 3
     CaptureCommand = 4
@@ -38,10 +40,6 @@ class DrivingCommand(Glob):
     def pack(self):
 
         return struct.pack(DrivingCommand.data_format, self.movement_type, self.speed, self.omega)
-        
-    def unpack(self, data_bytes):
-
-        self.movement_type, self.speed, self.omega = struct.unpack(DrivingCommand.data_format, data_bytes)
 
     
 class StatusData(Glob):
@@ -56,10 +54,6 @@ class StatusData(Glob):
         '''Constructor'''
         self.instance = instance
         self.tilt = tilt
-
-    def pack(self):
-        
-        return struct.pack(StatusData.data_format, self.tilt)
 
     def unpack(self, data_bytes):
         
@@ -114,4 +108,35 @@ class CaptureData(Glob):
         values = struct.unpack(CaptureData.data_format, data_bytes)
         self.time = values[0]
         self.data = values[1:]
+        
+class AssertMessage(Glob):
+    
+    # Unique class ID
+    id = GlobID.AssertMessage
+    
+    # Struct format for packing/unpacking. Little-endian no padding.
+    data_format = '<I200s'
+    
+    def __init__(self, instance=1):
+        '''Constructor'''
+        self.instance = instance
 
+    def unpack(self, data_bytes):
+        
+        self.action, self.message = struct.unpack(AssertMessage.data_format, data_bytes)
+
+class DebugMessage(Glob):
+    
+    # Unique class ID
+    id = GlobID.DebugMessage
+    
+    # Struct format for packing/unpacking. Little-endian no padding.
+    data_format = '<200s'
+    
+    def __init__(self, instance=1):
+        '''Constructor'''
+        self.instance = instance
+
+    def unpack(self, data_bytes):
+        
+        self.message = struct.unpack(DebugMessage.data_format, data_bytes)[0]

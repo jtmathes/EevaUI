@@ -1,6 +1,9 @@
 
-from PyQt4 import QtGui
-from PyQt4.QtGui import QMainWindow
+import threading
+
+from PyQt4 import QtGui, QtCore
+from PyQt4.QtCore import QMetaObject, Qt, Q_ARG
+from PyQt4.QtGui import QMainWindow, QColor
 from eeva_designer import Ui_MainWindow
 
 class EevaMainWindow(QMainWindow, Ui_MainWindow):
@@ -24,6 +27,9 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         # Data Capture
         self.sampleRateTextEdit.editingFinished.connect(self.sample_rate_changed)
         self.sampleCountTextEdit.editingFinished.connect(self.capture_samples_edited)
+
+    def _need_to_switch_thread(self):
+        return not isinstance(threading.current_thread(), threading._MainThread)
 
     def collect_data_button_clicked(self):
         self.controller.start_data_capture()
@@ -55,8 +61,12 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         self.portsComboBox.clear()
         self.portsComboBox.addItems(port_names)
         
+    @QtCore.pyqtSlot(str, str)
     def display_message(self, message, color):
-        
+        if self._need_to_switch_thread():
+            QMetaObject.invokeMethod(self, 'display_message', Qt.QueuedConnection, Q_ARG(str, message), Q_ARG(str, color))
+            return
+        self.messageCenterTextEdit.setTextColor(QColor(color))
         self.messageCenterTextEdit.append(message)
 
     # Robot Status

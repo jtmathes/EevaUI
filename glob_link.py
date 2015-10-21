@@ -97,7 +97,6 @@ class ParserThread(threading.Thread):
                 
                 self.reset_parse()
                 
-    
     def advance_parse(self):
         self.parse_state += 1
         
