@@ -46,6 +46,8 @@ class EevaController:
         self.view.set_capture_samples(DEFAULT_NUM_SAMPLES)
         self.validate_capture_parameters()
         
+        self.view.restore_saved_settings()
+        
     def start_data_capture(self):
         
         rate = float(self.view.get_capture_rate())
@@ -102,6 +104,7 @@ class EevaController:
         try:
             self.link.connect(port_name, self.new_message_callback)
             self.link_connected = True
+            self.view.save_default_port(port_name)
         except serial.SerialException as e:
             self.display_message('Failed to open {}.\n{}'.format(port_name, e))
             self.link.disconnect()

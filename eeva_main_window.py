@@ -1,6 +1,10 @@
 
 import threading
 
+# Use default python types instead of QVariant
+import sip
+sip.setapi('QVariant', 2)
+
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import QMetaObject, Qt, Q_ARG
 from PyQt4.QtGui import QMainWindow, QColor
@@ -27,6 +31,14 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         # Data Capture
         self.sampleRateTextEdit.editingFinished.connect(self.sample_rate_changed)
         self.sampleCountTextEdit.editingFinished.connect(self.capture_samples_edited)
+        
+        self.settings = QtCore.QSettings("NER", "EevaUI")
+        
+    def restore_saved_settings(self):
+        '''Should be called after initializing view.'''
+        saved_port = str(self.settings.value("default_port"))
+        print saved_port
+        self.set_port(saved_port)
 
     def _need_to_switch_thread(self):
         return not isinstance(threading.current_thread(), threading._MainThread)
@@ -55,11 +67,21 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
     def refresh_ports_button_clicked(self):
         
         self.controller.request_new_port_list()
+        
+    def save_default_port(self, port_name):
+        '''Save port as default for next time application opens.'''
+        self.settings.setValue("default_port", port_name)
 
     def show_serial_ports(self, port_names):
         
         self.portsComboBox.clear()
         self.portsComboBox.addItems(port_names)
+        
+    def set_port(self, port_name):
+        
+        index = self.portsComboBox.findText(port_name)
+        if index >= 0:
+            self.portsComboBox.setCurrentIndex(index)
         
     @QtCore.pyqtSlot(str, str)
     def display_message(self, message, color):
