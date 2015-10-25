@@ -19,6 +19,8 @@ class EevaController:
         self.link = link
         self.view = None
         
+        self.driving_mode_enabled = False
+        
         # fields for tracking link stats
         self.last_bytes_tx = 0
         self.last_bytes_rx = 0
@@ -182,6 +184,24 @@ class EevaController:
         color = self.source_display_colors.get(source, 'black')
 
         self.view.display_message(message, color)
+        
+    def change_driving_mode(self):
+        
+        if not self.driving_mode_enabled:
+            self.view.update_driving_mode_button("Driving Enabled", "lightgreen")
+        else: # driving mode disabled
+            self.view.update_driving_mode_button("Driving Disabled", "pink")
+        
+        # Toggle driving mode
+        self.driving_mode_enabled = not self.driving_mode_enabled
+        
+    def handle_driving_command(self, cmd):
+        
+        if not self.driving_mode_enabled:
+            return False # didn't handle key
+
+        msg = DrivingCommand(movement_type = cmd)
+        self.link.send(msg)
         
     def limit(self, val, min_val, max_val):
         

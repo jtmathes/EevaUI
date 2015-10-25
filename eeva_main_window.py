@@ -6,13 +6,14 @@ import sip
 sip.setapi('QVariant', 2)
 
 from PyQt4 import QtGui, QtCore
-from PyQt4.QtCore import QMetaObject, Qt, Q_ARG
+from PyQt4.QtCore import QMetaObject, QObject, QEvent, Qt, Q_ARG
 from PyQt4.QtGui import QMainWindow, QColor
 from eeva_designer import Ui_MainWindow
+from glob import DrivingCommand
 
 class EevaMainWindow(QMainWindow, Ui_MainWindow):
     
-    def __init__(self, controller):
+    def __init__(self, app, controller):
         
         QMainWindow.__init__(self)
 
@@ -32,6 +33,11 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         self.sampleRateTextEdit.editingFinished.connect(self.sample_rate_changed)
         self.sampleCountTextEdit.editingFinished.connect(self.capture_samples_edited)
         
+        # Driving. Install filter to entire app so all keypresses get checked.
+        self.key_press_filter = DrivingKeyFilter(controller)
+        app.installEventFilter(self.key_press_filter)
+        self.enableDrivingButton.clicked.connect(self.enabled_driving_button_clicked)
+
         self.settings = QtCore.QSettings("NER", "EevaUI")
         
     def restore_saved_settings(self):
@@ -123,3 +129,42 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
     def set_dropped_msgs(self, new):
         self.droppedLineEdit.setText(str(new))
 
+    # Driving
+    def enabled_driving_button_clicked(self):
+        self.controller.change_driving_mode()
+    def update_driving_mode_button(self, text, color):
+        self.enableDrivingButton.setText(text)
+        self.enableDrivingButton.setStyleSheet("background-color: {}".format(color))
+
+class DrivingKeyFilter(QObject):
+    
+    def __init__(self, controller):
+        QObject.__init__(self)
+        self.controller = controller
+
+    def eventFilter(self, obj, event):
+        
+        if (event.type() == QEvent.KeyPress) and (self.controller.driving_mode_enabled):
+
+            cmd = self.convert_key_to_driving_command(event.key())
+            
+            if cmd is not None:
+                self.controller.handle_driving_command(cmd)
+                return True # don't pass on key press
+
+        return False  # event wasn't handled      
+    
+    def convert_key_to_driving_command(self, key):
+        
+        if key == Qt.Key_Up:
+            return DrivingCommand.forward
+        elif key == Qt.Key_Right:
+            return DrivingCommand.turn_right
+        elif key == Qt.Key_Left:
+            return DrivingCommand.turn_left
+        elif key == Qt.Key_Down:
+            return DrivingCommand.reverse
+        elif key == Qt.Key_Space:
+            return DrivingCommand.stop
+        
+        return None 

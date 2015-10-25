@@ -27,6 +27,12 @@ class DrivingCommand(Glob):
     # Unique class ID
     id = GlobID.DrivingCommand
     
+    forward = 0
+    reverse = 1
+    turn_right = 2
+    turn_left = 3
+    stop = 4
+    
     # Struct format for packing/unpacking. Little-endian no padding.
     data_format = '<Iff'
     
@@ -40,7 +46,6 @@ class DrivingCommand(Glob):
     def pack(self):
 
         return struct.pack(DrivingCommand.data_format, self.movement_type, self.speed, self.omega)
-
     
 class StatusData(Glob):
     

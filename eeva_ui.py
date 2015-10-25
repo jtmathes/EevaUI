@@ -13,7 +13,7 @@ if __name__ == '__main__':
     # Configure system
     link = GlobLink()
     controller = EevaController(link)
-    window = EevaMainWindow(controller)
+    window = EevaMainWindow(app, controller)
     controller.set_view(window)
     
     window.show()
