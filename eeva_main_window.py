@@ -24,6 +24,8 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         
         # Main Command Buttons
         self.collectDataButton.clicked.connect(self.collect_data_button_clicked)
+        self.startAndCollectButton.clicked.connect(self.start_and_collect_data_button_clicked)
+        self.openOutputDirectoryButton.clicked.connect(self.open_output_directory_clicked)
         
         # Connection
         self.connectButton.clicked.connect(self.connect_button_clicked)
@@ -50,6 +52,10 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         return not isinstance(threading.current_thread(), threading._MainThread)
 
     def collect_data_button_clicked(self):
+        self.controller.change_capture_status()
+        
+    def start_and_collect_data_button_clicked(self):
+        # TODO start
         self.controller.start_data_capture()
 
     def sample_rate_changed(self, *args):
@@ -57,6 +63,9 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
     
     def capture_samples_edited(self, *args):
         self.controller.validate_capture_parameters()
+        
+    def open_output_directory_clicked(self):
+        self.controller.open_output_directory()
 
     def connect_button_clicked(self):
         
@@ -66,6 +75,35 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         else:
             self.controller.disconnect_from_port()
            
+           
+    @QtCore.pyqtSlot(str)
+    def set_start_and_capture_button_text(self, text):
+        if self._need_to_switch_thread():
+            QMetaObject.invokeMethod(self, 'set_start_and_capture_button_text', Qt.QueuedConnection, Q_ARG(str, text))
+            return 
+        self.startAndCollectButton.setText(text)
+
+    @QtCore.pyqtSlot(str)
+    def set_capture_button_text(self, text):
+        if self._need_to_switch_thread():
+            QMetaObject.invokeMethod(self, 'set_capture_button_text', Qt.QueuedConnection, Q_ARG(str, text))
+            return 
+        self.collectDataButton.setText(text)
+        
+    @QtCore.pyqtSlot(bool)
+    def set_start_and_capture_button_enabled(self, state):
+        if self._need_to_switch_thread():
+            QMetaObject.invokeMethod(self, 'set_start_and_capture_button_enabled', Qt.QueuedConnection, Q_ARG(bool, state))
+            return 
+        self.startAndCollectButton.setEnabled(state)
+
+    @QtCore.pyqtSlot(bool)
+    def set_capture_button_enabled(self, state):
+        if self._need_to_switch_thread():
+            QMetaObject.invokeMethod(self, 'set_capture_button_enabled', Qt.QueuedConnection, Q_ARG(bool, state))
+            return 
+        self.collectDataButton.setEnabled(state)
+
     def set_connect_button_text(self, new_text):
         
         self.connectButton.setText(new_text)
@@ -114,6 +152,23 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         return self.durationLineEdit.text()
     def get_capture_samples(self):
         return self.sampleCountTextEdit.text()
+    
+    def get_data_capture_filename(self):
+        return str(self.dataFileNameLineEdit.text())
+    @QtCore.pyqtSlot(str)
+    def set_data_capture_filename(self, fname):
+        if self._need_to_switch_thread():
+            QMetaObject.invokeMethod(self, 'set_data_capture_filename', Qt.QueuedConnection, Q_ARG(str, fname))
+            return 
+        self.dataFileNameLineEdit.setText(fname)
+    def need_to_generate_filename(self,):
+        return bool(self.generateFileNameCheckBox.checkState())
+    @QtCore.pyqtSlot(bool)
+    def set_generate_filename(self, state):
+        if self._need_to_switch_thread():
+            QMetaObject.invokeMethod(self, 'set_generate_filename', Qt.QueuedConnection, Q_ARG(bool, state))
+            return 
+        self.generateFileNameCheckBox.setChecked(state)
 
     # Connection Status
     def set_num_msgs_sent(self, new):
@@ -144,7 +199,7 @@ class DrivingKeyFilter(QObject):
 
     def eventFilter(self, obj, event):
         
-        if (event.type() == QEvent.KeyPress) and (self.controller.driving_mode_enabled):
+        if (event.type() == QEvent.KeyPress) and self.controller.driving_mode_enabled:
 
             cmd = self.convert_key_to_driving_command(event.key())
             

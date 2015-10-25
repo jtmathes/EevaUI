@@ -1,5 +1,10 @@
 import serial
 import math
+import csv
+import os
+import sys
+import time
+import subprocess
 from serial_extension import list_serial_ports
 from glob import *
 
@@ -21,12 +26,22 @@ class EevaController:
         
         self.driving_mode_enabled = False
         
+        # Use home directory for root output directory. This is platform independent and works well with an installed package.
+        home_directory = os.path.expanduser('~')
+        
+        # Create timestamped directory for current run.
+        self.session_directory = os.path.join(home_directory, 'eeva-output/', time.strftime("output-%Y-%m-%d-%H-%M-%S/"))
+        if not os.path.exists(self.session_directory):
+            os.makedirs(self.session_directory)
+        
         # fields for tracking link stats
         self.last_bytes_tx = 0
         self.last_bytes_rx = 0
         
         # list of actively received capture data (cleared after writing to file)
         self.capture_data = []
+        
+        self.capturing_data = False
         
         # What different message sources show as which color.
         self.source_display_colors = {'ui':'black', 'robot':'blue', 'assert':'red'}
@@ -44,18 +59,43 @@ class EevaController:
         
         self.request_new_port_list()
         
+        self.view.set_data_capture_filename('data')
+        self.view.set_generate_filename(False)
         self.view.set_capture_rate(DEFAULT_CAPTURE_RATE)
         self.view.set_capture_samples(DEFAULT_NUM_SAMPLES)
         self.validate_capture_parameters()
         
         self.view.restore_saved_settings()
         
+    def change_capture_status(self):
+        
+        if self.capturing_data:
+            self.stop_data_capture()
+        else: 
+            self.start_data_capture()
+        
     def start_data_capture(self):
+        
+        if self.capturing_data:
+            self.display_message("Need to finish collecting data first.")
+        
+        self.capture_data = []
         
         rate = float(self.view.get_capture_rate())
         samples = int(self.view.get_capture_samples())
         msg = CaptureCommand(is_start=1, freq=rate, desired_samples=samples)
         self.link.send(msg)
+        
+        self.capturing_data = True
+        self.view.set_capture_button_text("Stop Collecting")
+        
+    def stop_data_capture(self):
+        
+        stop_msg = CaptureCommand(is_start = 0)
+        self.link.send(stop_msg)
+        
+        self.capturing_data = False
+        self.view.set_capture_button_text("Collect Data")
         
     def validate_capture_parameters(self):
         
@@ -107,6 +147,10 @@ class EevaController:
             self.link.connect(port_name, self.new_message_callback)
             self.link_connected = True
             self.view.save_default_port(port_name)
+            
+            # In case we got left in a bad state.
+            self.stop_data_capture()
+            
         except serial.SerialException as e:
             self.display_message('Failed to open {}.\n{}'.format(port_name, e))
             self.link.disconnect()
@@ -118,8 +162,6 @@ class EevaController:
             
             self.view.set_connect_button_text('Disconnect')
             
-            # TODO save port name for next time form is opened
-    
     def disconnect_from_port(self):
         
         self.link.disconnect()
@@ -148,7 +190,7 @@ class EevaController:
             if len(self.capture_data) == 0:
                 self.display_message('Receiving data...')
                 
-            self.capture_data.append(msg)
+            self.capture_data.append(msg.as_tuple())
             
         elif id == GlobID.CaptureCommand:
             msg = CaptureCommand.from_bytes(body)
@@ -166,8 +208,11 @@ class EevaController:
                 self.display_message("Only received {} of {} samples.".format(len(self.capture_data), expected_samples))
             else: # Received more data than expected.
                 self.display_message("Received too many samples ({}). Only expecting {}.".format(len(self.capture_data), expected_samples))
+
+            self.write_data_to_file()
             
-            # TODO call stop data capture and write to file
+            self.stop_data_capture()
+            
             self.capture_data = []
             
     def request_new_port_list(self):
@@ -203,6 +248,61 @@ class EevaController:
         msg = DrivingCommand(movement_type = cmd)
         self.link.send(msg)
         
+    def write_data_to_file(self):
+        
+        if len(self.capture_data) == 0:
+            return
+        
+        filename = self.view.get_data_capture_filename()
+        
+        need_to_generate_fname = self.view.need_to_generate_filename()
+        
+        if not need_to_generate_fname and not filename:
+            
+            self.display_message("Generating file name since none was provided")
+            self.view.set_generate_filename(True)
+            need_to_generate_fname = True
+            
+        if need_to_generate_fname:
+    
+            filename = "data_" + time.strftime("%Y-%m-%d-%H-%M-%S")
+            
+        filename = self.make_filename_unique(self.session_directory, filename)
+            
+        # update text box so user can see actually used name
+        self.view.set_data_capture_filename(filename)
+            
+        csv_filename = filename + ".csv"
+        csv_filepath = os.path.join(self.session_directory, csv_filename)
+        #csv_filepath = self.make_filepath_unique(csv_filepath)
+        
+        column_names = ('time', 'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8')
+        
+        try:
+            self.write_to_csv(csv_filepath, column_names, self.capture_data)
+            self.display_message('Created file {}'.format(csv_filename))
+        except IOError:
+            self.display_message('IO Error. Filename {} is most likely invalid.'.format(csv_filename))
+        
+    def write_to_csv(self, filepath, column_names, data):
+        
+        with open(filepath, 'wb') as outfile:
+            writer = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            writer.writerow(column_names)
+            writer.writerows(data) 
+
+    def open_output_directory(self):
+        
+        if sys.platform=='win32':
+            os.startfile(self.session_directory)
+        elif sys.platform=='darwin':
+            subprocess.Popen(['open', self.session_directory])
+        else:
+            try:
+                subprocess.Popen(['xdg-open', self.session_directory])
+            except OSError:
+                self.display_message("OS not supported.")
+
     def limit(self, val, min_val, max_val):
         
         val_type = type(val)
@@ -219,5 +319,37 @@ class EevaController:
         except ValueError:
             value = default_value
         return value
+    
+    def make_filepath_unique(self, path):
         
+        _, fname = os.path.split(path)
+        just_fname, ext = os.path.splitext(fname)[1]
+        
+        i = 1 # number to append_to file name
+        while os.path.exists(path):
+
+            new_fname = '{}_{}{}'.format(just_fname, i, ext)
+            path = os.path.join(dir, new_fname)
+            i += 1
+            
+        return path
+
+    def make_filename_unique(self, directory, fname_no_ext):
+        
+        original_fname = fname_no_ext
+        dir_contents = os.listdir(directory)
+        dir_fnames = [os.path.splitext(c)[0] for c in dir_contents]
+        
+        while fname_no_ext in dir_fnames:
+            
+            try:
+                v = fname_no_ext.split('_')
+                i = int(v[-1])
+                i += 1
+                fname_no_ext = '_'.join(v[:-1] + [str(i)])
+            except ValueError:
+                fname_no_ext = '{}_{}'.format(original_fname, 1)
+
+        return fname_no_ext
+
         

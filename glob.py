@@ -110,9 +110,12 @@ class CaptureData(Glob):
 
     def unpack(self, data_bytes):
         
-        values = struct.unpack(CaptureData.data_format, data_bytes)
-        self.time = values[0]
-        self.data = values[1:]
+        self.values = struct.unpack(CaptureData.data_format, data_bytes)
+        self.time = self.values[0]
+        self.data = self.values[1:]
+        
+    def as_tuple(self):
+        return self.values
         
 class AssertMessage(Glob):
     

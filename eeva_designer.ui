@@ -388,7 +388,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="pushButton_10">
+              <widget class="QPushButton" name="openOutputDirectoryButton">
                <property name="text">
                 <string>Open Output Directory</string>
                </property>
@@ -545,7 +545,7 @@
               </widget>
              </item>
              <item alignment="Qt::AlignHCenter">
-              <widget class="QCheckBox" name="runOnStartCheckBox_2">
+              <widget class="QCheckBox" name="generateFileNameCheckBox">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
                  <horstretch>0</horstretch>
