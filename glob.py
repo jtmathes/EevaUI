@@ -9,6 +9,8 @@ class GlobID:
     DrivingCommand = 3
     CaptureCommand = 4
     StatusData = 5
+    Modes = 14
+    RobotCommand = 16
 
 class Glob(object):
     
@@ -148,3 +150,58 @@ class DebugMessage(Glob):
     def unpack(self, data_bytes):
         
         self.message = struct.unpack(DebugMessage.data_format, data_bytes)[0]
+
+class Modes(Glob):
+    
+    # Unique class ID
+    id = GlobID.Modes
+    
+    # Main mode IDs
+    balance = 0
+    horizontal = 1
+    line_follow = 2
+    experiment = 3
+    
+    # Operating State IDs
+    stopped = 0
+    initialing = 1
+    normal = 2
+    
+    # Experiment sub IDs
+    experiment1 = 0
+    
+    # Struct format for packing/unpacking. Little-endian no padding.
+    data_format = '<BBB'
+    
+    def __init__(self, main_mode=balance, sub_mode=0, state=normal, instance=1):
+        '''Constructor'''
+        self.instance = instance
+        self.main_mode = main_mode
+        self.sub_mode = sub_mode
+        self.state = state
+        
+    def pack(self):
+
+        return struct.pack(Modes.data_format, self.main_mode, self.sub_mode, self.state)
+
+class RobotCommand(Glob):
+    
+    # Unique class ID
+    id = GlobID.RobotCommand
+    
+    start = 0
+    stop = 1
+    reset = 2
+    
+    # Struct format for packing/unpacking. Little-endian no padding.
+    data_format = '<B'
+    
+    def __init__(self, command=stop, instance=1):
+        '''Constructor'''
+        self.instance = instance
+        self.command = command
+        
+    def pack(self):
+
+        return struct.pack(RobotCommand.data_format, self.command)
+    

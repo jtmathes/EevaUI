@@ -59,6 +59,8 @@ class EevaController:
         
         self.request_new_port_list()
         
+        self.view.select_balance_mode()
+        
         self.view.set_data_capture_filename('data')
         self.view.set_generate_filename(False)
         self.view.set_capture_rate(DEFAULT_CAPTURE_RATE)
@@ -66,6 +68,17 @@ class EevaController:
         self.validate_capture_parameters()
         
         self.view.restore_saved_settings()
+        
+    def send_robot_command(self, cmd_type):
+        
+        cmd = RobotCommand(command = cmd_type)
+        self.link.send(cmd)
+        
+    def change_robot_mode(self, mode):
+        
+        print mode
+        cmd = Modes(main_mode = mode)
+        self.link.send(cmd)
         
     def change_capture_status(self):
         

@@ -9,7 +9,7 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import QMetaObject, QObject, QEvent, Qt, Q_ARG
 from PyQt4.QtGui import QMainWindow, QColor
 from eeva_designer import Ui_MainWindow
-from glob import DrivingCommand
+from glob import DrivingCommand, RobotCommand, Modes
 
 class EevaMainWindow(QMainWindow, Ui_MainWindow):
     
@@ -23,9 +23,18 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         self.controller = controller
         
         # Main Command Buttons
+        self.startButton.clicked.connect(self.start_button_clicked)
+        self.stopButton.clicked.connect(self.stop_button_clicked)
+        self.resetStateButton.clicked.connect(self.reset_state_button_clicked)
         self.collectDataButton.clicked.connect(self.collect_data_button_clicked)
         self.startAndCollectButton.clicked.connect(self.start_and_collect_data_button_clicked)
         self.openOutputDirectoryButton.clicked.connect(self.open_output_directory_clicked)
+        
+        # Mode radio buttons
+        self.balanceRadioButton.clicked.connect(self.balance_mode_selected)
+        self.horizontalRadioButton.clicked.connect(self.horizontal_mode_selected)
+        self.followLineRadioButton.clicked.connect(self.line_follow_mode_selected)
+        self.experimentRadioButton.clicked.connect(self.experiment_mode_selected)
         
         # Connection
         self.connectButton.clicked.connect(self.connect_button_clicked)
@@ -51,11 +60,20 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
     def _need_to_switch_thread(self):
         return not isinstance(threading.current_thread(), threading._MainThread)
 
+    def start_button_clicked(self):
+        self.controller.send_robot_command(RobotCommand.start)
+        
+    def stop_button_clicked(self):
+        self.controller.send_robot_command(RobotCommand.stop)
+        
+    def reset_state_button_clicked(self):
+        self.controller.send_robot_command(RobotCommand.reset)
+
     def collect_data_button_clicked(self):
         self.controller.change_capture_status()
         
     def start_and_collect_data_button_clicked(self):
-        # TODO start
+        self.controller.send_robot_command(RobotCommand.start)
         self.controller.start_data_capture()
 
     def sample_rate_changed(self, *args):
@@ -66,7 +84,19 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         
     def open_output_directory_clicked(self):
         self.controller.open_output_directory()
-
+        
+    def balance_mode_selected(self):
+        self.controller.change_robot_mode(Modes.balance)
+    def horizontal_mode_selected(self):
+        self.controller.change_robot_mode(Modes.horizontal)
+    def line_follow_mode_selected(self):
+        self.controller.change_robot_mode(Modes.line_follow)
+    def experiment_mode_selected(self):
+        self.controller.change_robot_mode(Modes.experiment)    
+    
+    def select_balance_mode(self):
+        self.balanceRadioButton.setChecked(True)
+    
     def connect_button_clicked(self):
         
         if str(self.connectButton.text()).lower() == 'connect':
@@ -74,7 +104,6 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
             self.controller.connect_to_port(port_name)
         else:
             self.controller.disconnect_from_port()
-           
            
     @QtCore.pyqtSlot(str)
     def set_start_and_capture_button_text(self, text):

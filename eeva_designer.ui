@@ -293,28 +293,28 @@
               <number>17</number>
              </property>
              <item>
-              <widget class="QRadioButton" name="radioButton">
+              <widget class="QRadioButton" name="balanceRadioButton">
                <property name="text">
                 <string>Balance</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QRadioButton" name="radioButton_2">
+              <widget class="QRadioButton" name="horizontalRadioButton">
                <property name="text">
                 <string>Horizontal</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QRadioButton" name="radioButton_3">
+              <widget class="QRadioButton" name="followLineRadioButton">
                <property name="text">
                 <string>Follow Line</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QRadioButton" name="radioButton_4">
+              <widget class="QRadioButton" name="experimentRadioButton">
                <property name="text">
                 <string>Experiment</string>
                </property>
