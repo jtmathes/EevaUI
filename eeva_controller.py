@@ -132,15 +132,15 @@ class EevaController:
     def link_timer_elapsed(self):
 
         try:
-            bytes_tx = self.link.num_messages_sent
-            bytes_rx = self.link.num_messages_received
+            bytes_tx = self.link.num_bytes_sent
+            bytes_rx = self.link.num_bytes_received
 
             # Estimate bytes per second.  Assume timer actually elapses close to desired rate.
             bps_tx = max(0, int((bytes_tx - self.last_bytes_tx) / LINK_STATS_TIMER_INTERVAL))
             bps_rx = max(0, int((bytes_rx - self.last_bytes_rx) / LINK_STATS_TIMER_INTERVAL))
             
-            self.view.set_num_msgs_sent(bytes_tx)
-            self.view.set_num_msgs_received(bytes_rx)
+            self.view.set_num_msgs_sent(self.link.num_messages_sent)
+            self.view.set_num_msgs_received(self.link.num_messages_received)
             self.view.set_bps_sent(bps_tx)
             self.view.set_bps_received(bps_rx)
             self.view.set_bad_crc(self.link.num_bad_crc_messages)
@@ -194,7 +194,7 @@ class EevaController:
         
         elif id == GlobID.StatusData:
             msg = StatusData.from_bytes(body)
-            self.view.set_pitch_angle(math.degrees(msg.tilt))
+            self.view.update_robot_status(msg.data)
             
         elif id == GlobID.CaptureData:
             

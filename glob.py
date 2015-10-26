@@ -1,5 +1,6 @@
 
 import struct
+import math
 
 class GlobID:
     
@@ -55,18 +56,43 @@ class StatusData(Glob):
     id = GlobID.StatusData
     
     # Struct format for packing/unpacking. Little-endian no padding.
-    data_format = '<f'
+    data_format = '<' + ('f' * 4) + ('B' * 4) + ('f' * 14)
     
-    def __init__(self, tilt=0, instance=1):
+    def __init__(self, instance=1):
         '''Constructor'''
         self.instance = instance
-        self.tilt = tilt
+        self.data = {}
 
     def unpack(self, data_bytes):
         
-        self.tilt = struct.unpack(StatusData.data_format, data_bytes)[0]
-        
-        
+        values = struct.unpack(StatusData.data_format, data_bytes)
+        self.data["battery"] = values[0]
+        self.data["roll"] = math.degrees(values[1])
+        self.data["pitch"] = math.degrees(values[2])
+        self.data["yaw"] = math.degrees(values[3])
+        self.data["main_mode"] = values[4]
+        self.data["sub_mode"] = values[5]
+        self.data["state"] = values[6]
+        self.data["pad0"] = values[7]
+        self.data["left_linear_position"] = values[8]
+        self.data["right_linear_position"] = values[9]
+        self.data["left_angular_position"] = math.degrees(values[10])
+        self.data["right_angular_position"] = math.degrees(values[11])
+        self.data["left_linear_velocity"] = values[12]
+        self.data["right_linear_velocity"] = values[13]
+        self.data["left_angular_velocity"] = math.degrees(values[14]) * 60.0 / 360.0 # rad/s to RPM
+        self.data["right_angular_velocity"] = math.degrees(values[15]) * 60.0 / 360.0 # rad/s to RPM
+        self.data["left_current"] = values[16]
+        self.data["right_current"] = values[17]
+        self.data["left_pwm"] = values[18] * 100 # to percentage
+        self.data["right_pwm"] = values[19] * 100 # to percentage
+        self.data["left_torque"] = values[20] * 1000 # to mNm
+        self.data["right_torque"] = values[21] * 1000 # to mNm
+        self.data["left_voltage"] = self.data["battery"] * self.data["left_pwm"] / 100.0
+        self.data["right_voltage"] = self.data["battery"] * self.data["right_pwm"] / 100.0
+        self.data["left_power"] = abs(self.data["left_voltage"] * self.data["left_current"])
+        self.data["right_power"] = abs(self.data["right_voltage"] * self.data["right_current"])
+            
 class CaptureCommand(Glob):
     
     # Unique class ID
@@ -204,4 +230,7 @@ class RobotCommand(Glob):
     def pack(self):
 
         return struct.pack(RobotCommand.data_format, self.command)
+    
+
+
     

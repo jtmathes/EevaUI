@@ -165,8 +165,34 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         self.messageCenterTextEdit.append(message)
 
     # Robot Status
-    def set_pitch_angle(self, new):
-        self.pitchLineEdit.setText('{:.1f}'.format(new))
+    @QtCore.pyqtSlot(dict)
+    def update_robot_status(self, status):
+        if self._need_to_switch_thread():
+            QMetaObject.invokeMethod(self, 'update_robot_status', Qt.QueuedConnection, Q_ARG(dict, status))
+            return
+        self.batteryLineEdit.setText('{:.1f}'.format(status["battery"]))
+        self.rollLineEdit.setText('{:.1f}'.format(status["roll"]))
+        self.pitchLineEdit.setText('{:.1f}'.format(status["pitch"]))
+        self.yawLineEdit.setText('{:.1f}'.format(status["yaw"]))
+        self.modeLineEdit.setText('{} / {} / {}'.format(status["main_mode"], status["sub_mode"], status["state"]))
+        self.rAPLineEdit.setText(str(int(status["right_angular_position"])))
+        self.lAPLineEdit.setText(str(int(status["left_angular_position"])))
+        self.rAVLineEdit.setText(str(int(status["right_angular_velocity"])))
+        self.lAVLineEdit.setText(str(int(status["left_angular_velocity"])))
+        self.rLPLineEdit.setText(str(round(status["right_linear_position"], 2)))
+        self.lLPLineEdit.setText(str(round(status["left_linear_position"], 2)))
+        self.rLVLineEdit.setText(str(round(status["right_linear_velocity"], 1)))
+        self.lLVLineEdit.setText(str(round(status["left_linear_velocity"], 1)))
+        self.rCLineEdit.setText(str(round(status["right_current"], 2)))
+        self.lCLineEdit.setText(str(round(status["left_current"], 2)))
+        self.rPWMLineEdit.setText(str(int(status["right_pwm"])))
+        self.lPWMLineEdit.setText(str(int(status["left_pwm"])))
+        self.rTLineEdit.setText(str(int(status["right_torque"])))
+        self.lTLineEdit.setText(str(int(status["left_torque"])))
+        self.rVLineEdit.setText(str(round(status["right_voltage"], 1)))
+        self.lVLineEdit.setText(str(round(status["left_voltage"], 1)))
+        self.rPowerLineEdit.setText(str(round(status["right_power"], 2)))
+        self.lPowerLineEdit.setText(str(round(status["left_power"], 2)))
 
     # Data Capture
     def set_capture_rate(self, new):
