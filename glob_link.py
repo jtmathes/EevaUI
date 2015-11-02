@@ -20,11 +20,13 @@ class ParserThread(threading.Thread):
         # Receive fields
         self.parse_state = -1 # Index representing sequential state when parsing incoming bytes. 
         self.num_body_bytes = 0 # How many bytes are going to follow in message.
-        self.body_start_idx = 0 # Message data idx of first body byte.
+        self.body_start_idx = 0 # Message data index of first body byte.
+        self.body_end_idx = 0 # Message data index of last body byte.
         self.message_data = bytearray(300) # Entire message excluding checksum.
         self.data_idx = 0 # Index of where to store next received byte in message data array.
         self.expected_crc1 = 0 # lower byte of checksum at end of message
         self.expected_crc2 = 0 # upper byte " "
+        
         self.num_messages_received = 0
         self.num_bytes_received = 0
         self.num_bad_crc_messages = 0

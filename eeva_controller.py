@@ -10,12 +10,25 @@ from glob import *
 
 from PyQt4.QtCore import QTimer 
 
+# Data capture parameters
 DEFAULT_NUM_SAMPLES = 300
 MIN_NUM_SAMPLES = 1
 MAX_NUM_SAMPLES = 2000
 FASTEST_CAPTURE_RATE = 10000.0 # Hz
 DEFAULT_CAPTURE_RATE = FASTEST_CAPTURE_RATE / 100 # Hz
+
+# Connection settings
 LINK_STATS_TIMER_INTERVAL = 1 # seconds
+
+# Wave parameters
+DEFAULT_WAVE_MAGNITUDE = 1
+DEFAULT_WAVE_OFFSET = 0
+DEFAULT_WAVE_FREQ = 1
+DEFAULT_WAVE_DURATION = 5
+
+# Manual command parameters
+DEFAULT_MANUAL_COMMAND = 0
+DEFAULT_MANUAL_INCREMENT = 1
 
 class EevaController:
 
@@ -43,6 +56,10 @@ class EevaController:
         
         self.capturing_data = False
         
+        # Last main mode sent to the robot. 
+        self.last_main_mode = Modes.balance
+        self.last_sub_mode = 0
+        
         # What different message sources show as which color.
         self.source_display_colors = {'ui':'black', 'robot':'blue', 'assert':'red'}
 
@@ -67,18 +84,53 @@ class EevaController:
         self.view.set_capture_samples(DEFAULT_NUM_SAMPLES)
         self.validate_capture_parameters()
         
+        self.validate_wave_parameters()
+        self.validate_manual_command_parameters()
+        
+        self.view.set_experiment_list([Modes.experiments[k] for k in sorted(Modes.experiments.iterkeys())])
+        self.view.set_experiment_list_visibility(False)
+        
         self.view.restore_saved_settings()
         
     def send_robot_command(self, cmd_type):
+        
+        # Send experiment input in case we're in experiment mode.
+        if cmd_type == RobotCommand.start:
+            if self.view.run_wave_on_startup():
+                self.send_wave()
+            else:
+                self.send_manual_experiment_input()
         
         cmd = RobotCommand(command = cmd_type)
         self.link.send(cmd)
         
     def change_robot_mode(self, mode):
         
-        print mode
-        cmd = Modes(main_mode = mode)
+        cmd = Modes(main_mode = mode, sub_mode=self.last_sub_mode)
         self.link.send(cmd)
+        self.last_main_mode = mode
+        
+        self.view.set_experiment_list_visibility(mode == Modes.experiment)
+        
+    def change_experiment(self, experiment_id):
+        
+        cmd = Modes(main_mode=self.last_main_mode, sub_mode = experiment_id)
+        self.link.send(cmd)
+        self.last_sub_mode = experiment_id
+        
+    def send_wave(self):
+        
+        wave_type = self.view.get_selected_wave_type()
+        mag = float(self.view.get_wave_mag())
+        offset = float(self.view.get_wave_offset())
+        freq = float(self.view.get_wave_freq())
+        duration = float(self.view.get_wave_duration())
+        run_continuous = bool(self.view.run_wave_continuous())
+        
+        wave = Wave(wave_type=wave_type, mag=mag, offset=offset, freq=freq, 
+                    duration=duration, run_continuous=run_continuous, wave_time=0)
+        
+        self.link.send(wave)
         
     def change_capture_status(self):
         
@@ -128,6 +180,48 @@ class EevaController:
         self.view.set_capture_duration(duration)
         
         return duration
+    
+    def validate_wave_parameters(self):
+        
+        mag = self.try_parse(self.view.get_wave_mag(), float, DEFAULT_WAVE_MAGNITUDE)
+        mag = self.limit(mag, 0, 1e10)
+        offset = self.try_parse(self.view.get_wave_offset(), float, DEFAULT_WAVE_OFFSET)
+        offset = self.limit(offset, -1e10, 1e10)
+        freq = self.try_parse(self.view.get_wave_freq(), float, DEFAULT_WAVE_FREQ)
+        freq = self.limit(freq, 0.00001, 1e10)
+        duration = self.try_parse(self.view.get_wave_duration(), float, DEFAULT_WAVE_DURATION)
+        duration = self.limit(duration, 0, 1e10)
+
+        self.view.set_wave_mag(mag)
+        self.view.set_wave_offset(offset)
+        self.view.set_wave_freq(freq)
+        self.view.set_wave_duration(duration)
+        
+    def validate_manual_command_parameters(self):
+        
+        command = self.try_parse(self.view.get_manual_command(), float, DEFAULT_MANUAL_COMMAND)
+        command = self.limit(command, -1e10, 1e10)
+        increment = self.try_parse(self.view.get_manual_command_increment(), float, DEFAULT_MANUAL_INCREMENT)
+        increment = self.limit(increment, -1e10, 1e10)
+
+        self.view.set_manual_command(command)
+        self.view.set_manual_command_increment(increment)
+        
+    def change_manual_command(self, amount):
+        
+        command = float(self.view.get_manual_command())
+        
+        self.view.set_manual_command(command + amount)
+        
+        self.send_manual_experiment_input() 
+        
+    def send_manual_experiment_input(self):
+        
+        command = float(self.view.get_manual_command())
+        
+        msg = Wave(wave_type=Wave.constant, offset=command, run_continuous=True)
+        
+        self.link.send(msg)
         
     def link_timer_elapsed(self):
 
@@ -330,7 +424,7 @@ class EevaController:
         try:
             value = cast_type(value)
         except ValueError:
-            value = default_value
+            value = cast_type(default_value)
         return value
     
     def make_filepath_unique(self, path):

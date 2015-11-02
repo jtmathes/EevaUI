@@ -12,6 +12,7 @@ class GlobID:
     StatusData = 5
     Modes = 14
     RobotCommand = 16
+    Wave = 19
 
 class Glob(object):
     
@@ -193,8 +194,10 @@ class Modes(Glob):
     initialing = 1
     normal = 2
     
-    # Experiment sub IDs
-    experiment1 = 0
+    # Experiment sub IDs. Text labels so can show on form.
+    experiments = {0 : "None",
+                   1 : "Motor Speed Control",
+                   2 : "Some Other Experiment"}
     
     # Struct format for packing/unpacking. Little-endian no padding.
     data_format = '<BBB'
@@ -231,6 +234,49 @@ class RobotCommand(Glob):
 
         return struct.pack(RobotCommand.data_format, self.command)
     
-
-
+class Wave(Glob):
     
+    # Unique class ID
+    id = GlobID.Wave
+    
+    # wave types
+    sine = 0
+    square = 1
+    triangle = 2
+    trapezoidal = 3
+    constant = 4
+    
+    # wave states
+    stopped = 0
+    started = 1
+    
+    # Struct format for packing/unpacking. Little-endian no padding.
+    data_format = '<BBBBfffffffBBBB' + (15 * 'f')
+    
+    def __init__(self, **kargs):
+        '''Constructor'''
+        self.instance = kargs.get('instance', 1)
+        
+        self.type = kargs.get('wave_type', Wave.sine)
+        self.state = kargs.get('state', Wave.stopped)
+        self.value = kargs.get('wave_value', 0)
+        #self.pad = [0, 0]
+        self.mag = kargs.get('mag', 0)
+        self.freq = kargs.get('freq', 1)
+        self.duration = kargs.get('duration', 1)
+        self.offset = kargs.get('offset', 0)
+        self.time = kargs.get('wave_time', 0)
+        self.total_time = 0
+        self.run_continuous = kargs.get('run_continuous', False)
+        #self.pad2 = [0, 0, 0]
+        
+        # Trapezoid parameters
+        self.vmax = kargs.get('vmax', 0)
+        self.amax = kargs.get('amax', 0)
+        self.dx = kargs.get('dx', 0)
+        self.ts_and_cs = [0] * 12 # calculated on robot
+        
+    def pack(self):
+
+        return struct.pack(Wave.data_format, self.type, self.state, 0, 0, self.value, self.mag, self.freq, self.duration,
+                           self.offset, self.time, self.total_time, self.run_continuous, 0, 0, 0, self.vmax, self.amax, self.dx, *self.ts_and_cs)

@@ -9,7 +9,7 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import QMetaObject, QObject, QEvent, Qt, Q_ARG
 from PyQt4.QtGui import QMainWindow, QColor
 from eeva_designer import Ui_MainWindow
-from glob import DrivingCommand, RobotCommand, Modes
+from glob import DrivingCommand, RobotCommand, Modes, Wave
 
 class EevaMainWindow(QMainWindow, Ui_MainWindow):
     
@@ -36,6 +36,9 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         self.followLineRadioButton.clicked.connect(self.line_follow_mode_selected)
         self.experimentRadioButton.clicked.connect(self.experiment_mode_selected)
         
+        # Experiment selection
+        self.experimentComboBox.activated.connect(self.new_experiment_selected)
+        
         # Connection
         self.connectButton.clicked.connect(self.connect_button_clicked)
         self.refreshPortsButton.clicked.connect(self.refresh_ports_button_clicked)
@@ -48,13 +51,26 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         self.key_press_filter = DrivingKeyFilter(controller)
         app.installEventFilter(self.key_press_filter)
         self.enableDrivingButton.clicked.connect(self.enabled_driving_button_clicked)
+        
+        # Wave settings
+        self.sineRadioButton.setChecked(True)
+        self.trapezoidRadioButton.clicked.connect(self.trapezoid_wave_selected)
+        self.waveMagnitudeLineEdit.editingFinished.connect(self.wave_parameters_changed)
+        self.waveOffsetLineEdit.editingFinished.connect(self.wave_parameters_changed)
+        self.waveFrequencyLineEdit.editingFinished.connect(self.wave_parameters_changed)
+        self.waveDurationLineEdit.editingFinished.connect(self.wave_parameters_changed)
+        
+        # Manual experiment input
+        self.manualCommandLineEdit.editingFinished.connect(self.manual_command_edited)
+        self.manualIncrementLineEdit.editingFinished.connect(self.manual_command_increment_edited)
+        self.manualCommandDecreaseButton.clicked.connect(self.manual_command_decrease_clicked)
+        self.manualCommandIncreaseButton.clicked.connect(self.manual_command_incease_clicked)
 
         self.settings = QtCore.QSettings("NER", "EevaUI")
         
     def restore_saved_settings(self):
         '''Should be called after initializing view.'''
         saved_port = str(self.settings.value("default_port"))
-        print saved_port
         self.set_port(saved_port)
 
     def _need_to_switch_thread(self):
@@ -85,6 +101,7 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
     def open_output_directory_clicked(self):
         self.controller.open_output_directory()
         
+    # Robot modes
     def balance_mode_selected(self):
         self.controller.change_robot_mode(Modes.balance)
     def horizontal_mode_selected(self):
@@ -96,10 +113,27 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
     
     def select_balance_mode(self):
         self.balanceRadioButton.setChecked(True)
+        
+    def set_experiment_list_visibility(self, make_visible):
+        self.experimentComboBox.setEnabled(make_visible)
+        
+    # Experiment modes
+    def set_experiment_list(self, experiment_names):
+
+        self.experimentComboBox.clear()
+        self.experimentComboBox.addItems(experiment_names)
+        
+    def new_experiment_selected(self):
+        
+        experiment_idx = int(self.experimentComboBox.currentIndex())
+        self.controller.change_experiment(experiment_idx)
     
     def connect_button_clicked(self):
         
         if str(self.connectButton.text()).lower() == 'connect':
+            # TODO - would be better to request these from the robot
+            self.balanceRadioButton.setChecked(True)
+            self.experimentComboBox.setCurrentIndex(0)
             port_name = str(self.portsComboBox.currentText())
             self.controller.connect_to_port(port_name)
         else:
@@ -146,7 +180,7 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         self.settings.setValue("default_port", port_name)
 
     def show_serial_ports(self, port_names):
-        
+
         self.portsComboBox.clear()
         self.portsComboBox.addItems(port_names)
         
@@ -239,6 +273,69 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
     def set_dropped_msgs(self, new):
         self.droppedLineEdit.setText(str(new))
 
+    # Wave types
+    def trapezoid_wave_selected(self):
+        self.display_message('TODO - show trapezoid settings dialog', 'black')
+    
+    def get_selected_wave_type(self):
+        if self.sineRadioButton.isChecked():
+            return Wave.sine
+        if self.squareRadioButton.isChecked():
+            return Wave.square
+        if self.triangleRadioButton.isChecked():
+            return Wave.triangle
+        if self.trapezoidRadioButton.isChecked():
+            return Wave.trapezoidal
+    
+    def set_wave_mag(self, new_value):
+        self.waveMagnitudeLineEdit.setText(str(new_value))
+    def set_wave_offset(self, new_value):
+        self.waveOffsetLineEdit.setText(str(new_value))
+    def set_wave_freq(self, new_value):
+        self.waveFrequencyLineEdit.setText(str(new_value))
+    def set_wave_duration(self, new_value):
+        self.waveDurationLineEdit.setText(str(new_value))
+    def get_wave_mag(self):
+        return str(self.waveMagnitudeLineEdit.text())
+    def get_wave_offset(self):
+        return str(self.waveOffsetLineEdit.text())
+    def get_wave_freq(self):
+        return str(self.waveFrequencyLineEdit.text())
+    def get_wave_duration(self):
+        return str(self.waveDurationLineEdit.text())
+    def run_wave_continuous(self):
+        return bool(self.runWaveContinuousCheckBox.isChecked())
+    def run_wave_on_startup(self):
+        return bool(self.runWaveOnStartCheckbox.isChecked())
+    
+    def wave_parameters_changed(self):
+        self.controller.validate_wave_parameters()
+        
+    # Manual experiment input
+    def set_manual_command(self, new_value):
+        self.manualCommandLineEdit.setText(str(new_value))
+    def set_manual_command_increment(self, new_value):
+        self.manualIncrementLineEdit.setText(str(new_value))
+    def get_manual_command(self):
+        return str(self.manualCommandLineEdit.text())
+    def get_manual_command_increment(self):
+        return str(self.manualIncrementLineEdit.text())
+    
+    def manual_command_edited(self):
+        self.controller.validate_manual_command_parameters()
+        self.controller.send_manual_experiment_input()
+        
+    def manual_command_increment_edited(self):
+        self.controller.validate_manual_command_parameters()
+        
+    def manual_command_decrease_clicked(self):
+        increment = float(self.get_manual_command_increment())
+        self.controller.change_manual_command(-increment)
+
+    def manual_command_incease_clicked(self):
+        increment = float(self.get_manual_command_increment())
+        self.controller.change_manual_command(increment)
+        
     # Driving
     def enabled_driving_button_clicked(self):
         self.controller.change_driving_mode()
