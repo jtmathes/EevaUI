@@ -60,6 +60,9 @@ class EevaController:
         self.last_main_mode = Modes.balance
         self.last_sub_mode = 0
         
+        # List of PID parameters for controllers.
+        self.pid_params = [PidParams()] * PidParams.num_controllers
+        
         # What different message sources show as which color.
         self.source_display_colors = {'ui':'black', 'robot':'blue', 'assert':'red'}
 
@@ -86,9 +89,12 @@ class EevaController:
         
         self.validate_wave_parameters()
         self.validate_manual_command_parameters()
+        self.validate_pid_parameters(send=False)
         
         self.view.set_experiment_list([Modes.experiments[k] for k in sorted(Modes.experiments.iterkeys())])
         self.view.set_experiment_list_visibility(False)
+        
+        self.view.set_controller_list([PidParams.controllers[k] for k in sorted(PidParams.controllers.iterkeys())])
         
         self.view.restore_saved_settings()
         
@@ -197,6 +203,28 @@ class EevaController:
         self.view.set_wave_freq(freq)
         self.view.set_wave_duration(duration)
         
+    def validate_pid_parameters(self, send=False):
+        
+        view_params = self.view.get_pid_parameters()
+        params = PidParams()
+        params.kp = self.try_parse(view_params['kp'], float, 0)
+        params.ki = self.try_parse(view_params['ki'], float, 0)
+        params.kd = self.try_parse(view_params['kd'], float, 0)
+        params.hilimit = self.try_parse(view_params['sat_limit'], float, 0)
+        params.lolimit = -params.hilimit
+        params.integral_hilimit = self.try_parse(view_params['int_sat_limit'], float, 0)
+        params.integral_lolimit = -params.integral_hilimit
+
+        self.view.set_pid_parameters(params)
+        
+        pid_idx = self.view.get_controller_index()
+        params.instance = pid_idx + 1;
+        
+        if send:
+            # Save before sending so we don't need to request new value.
+            self.pid_params[pid_idx] = params
+            self.link.send(params)
+        
     def validate_manual_command_parameters(self):
         
         command = self.try_parse(self.view.get_manual_command(), float, DEFAULT_MANUAL_COMMAND)
@@ -257,6 +285,8 @@ class EevaController:
             
             # In case we got left in a bad state.
             self.stop_data_capture()
+            
+            self.request_controller_gains_from_robot()
             
         except serial.SerialException as e:
             self.display_message('Failed to open {}.\n{}'.format(port_name, e))
@@ -322,6 +352,27 @@ class EevaController:
             
             self.capture_data = []
             
+        elif id == GlobID.PidParams:
+            
+            msg = PidParams.from_bytes(body, instance)
+
+            self.pid_params[instance-1] = msg
+            
+            # Received last instance so update view for whichever controller is showing.
+            if instance == PidParams.num_controllers:
+                self.show_current_pid_params()
+            
+    def show_current_pid_params(self):
+        
+        pid_idx = self.view.get_controller_index()
+        
+        try:
+            params = self.pid_params[pid_idx]
+        except IndexError:
+            params = PidParams()
+            
+        self.view.set_pid_parameters(params)
+        
     def request_new_port_list(self):
         
         self.display_message('Refreshing ports')
@@ -330,6 +381,11 @@ class EevaController:
         port_list = [l[0] for l in list_ports.comports()]
     
         self.view.show_serial_ports(port_list)
+    
+    def request_controller_gains_from_robot(self):
+        
+        # Request all instances of PID parameters.
+        self.link.send(Request(PidParams.id, instance=0))
     
     def display_message(self, message, source='ui'):
 

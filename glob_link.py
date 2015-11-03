@@ -123,7 +123,9 @@ class ParserThread(threading.Thread):
         self.num_messages_received += 1
         
         id = self.message_data[1]
-        instance = struct.unpack('<H', self.message_data[1:3])
+        instance1 = self.message_data[2]
+        instance2 = self.message_data[3]
+        instance = instance1 + (instance2 << 8) 
         body = self.message_data[self.body_start_idx : self.body_end_idx]
         
         self.new_message_callback(id, instance, body)

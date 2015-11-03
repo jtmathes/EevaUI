@@ -9,7 +9,7 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import QMetaObject, QObject, QEvent, Qt, Q_ARG
 from PyQt4.QtGui import QMainWindow, QColor
 from eeva_designer import Ui_MainWindow
-from glob import DrivingCommand, RobotCommand, Modes, Wave
+from glob import DrivingCommand, RobotCommand, Modes, Wave, PidParams
 
 class EevaMainWindow(QMainWindow, Ui_MainWindow):
     
@@ -47,10 +47,19 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         self.sampleRateTextEdit.editingFinished.connect(self.sample_rate_changed)
         self.sampleCountTextEdit.editingFinished.connect(self.capture_samples_edited)
         
-        # Driving. Install filter to entire app so all keypresses get checked.
+        # Driving. Install filter to entire app so all key presses get checked.
         self.key_press_filter = DrivingKeyFilter(controller)
         app.installEventFilter(self.key_press_filter)
         self.enableDrivingButton.clicked.connect(self.enabled_driving_button_clicked)
+        
+        # Controller
+        self.controlComboBox.activated.connect(self.controller_changed)
+        self.proportionalLineEdit.editingFinished.connect(self.pid_parameters_changed)
+        self.integralLineEdit.editingFinished.connect(self.pid_parameters_changed)
+        self.derivativeLineEdit.editingFinished.connect(self.pid_parameters_changed)
+        self.satLimitLineEdit.editingFinished.connect(self.pid_parameters_changed)
+        self.intSatLimitLineEdit.editingFinished.connect(self.pid_parameters_changed)
+        
         
         # Wave settings
         self.sineRadioButton.setChecked(True)
@@ -197,7 +206,41 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
             return
         self.messageCenterTextEdit.setTextColor(QColor(color))
         self.messageCenterTextEdit.append(message)
+          
+    # PID Parameters
+    def set_controller_list(self, controller_names):
+        self.controlComboBox.clear()
+        self.controlComboBox.addItems(controller_names)
 
+    def pid_parameters_changed(self):
+        self.controller.validate_pid_parameters(send=True)
+        
+    def controller_changed(self):
+        self.controller.show_current_pid_params()
+    
+    def get_pid_parameters(self):
+        params = {}
+        params['kp'] = self.proportionalLineEdit.text()
+        params['ki'] = self.integralLineEdit.text()
+        params['kd'] = self.derivativeLineEdit.text()
+        params['sat_limit'] = self.satLimitLineEdit.text()
+        params['int_sat_limit'] = self.intSatLimitLineEdit.text()
+        return params
+    
+    def get_controller_index(self):
+        return int(self.controlComboBox.currentIndex())
+        
+    @QtCore.pyqtSlot(PidParams)
+    def set_pid_parameters(self, params):
+        if self._need_to_switch_thread():
+            QMetaObject.invokeMethod(self, 'set_pid_parameters', Qt.QueuedConnection, Q_ARG(PidParams, params))
+            return
+        self.proportionalLineEdit.setText('{:.5g}'.format(params.kp))
+        self.integralLineEdit.setText('{:.5g}'.format(params.ki))
+        self.derivativeLineEdit.setText('{:.5g}'.format(params.kd))
+        self.satLimitLineEdit.setText('{:.5g}'.format(params.hilimit))
+        self.intSatLimitLineEdit.setText('{:.5g}'.format(params.integral_hilimit))
+        
     # Robot Status
     @QtCore.pyqtSlot(dict)
     def update_robot_status(self, status):

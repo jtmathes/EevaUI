@@ -13,6 +13,8 @@ class GlobID:
     Modes = 14
     RobotCommand = 16
     Wave = 19
+    PidParams = 20
+    Request = 21
 
 class Glob(object):
     
@@ -280,3 +282,66 @@ class Wave(Glob):
 
         return struct.pack(Wave.data_format, self.type, self.state, 0, 0, self.value, self.mag, self.freq, self.duration,
                            self.offset, self.time, self.total_time, self.run_continuous, 0, 0, 0, self.vmax, self.amax, self.dx, *self.ts_and_cs)
+
+class PidParams(Glob):
+    
+    # Unique class ID
+    id = GlobID.PidParams
+    
+    # Controller IDs. Text labels so can show on form.
+    controllers = {0 : "Left Speed",
+                   1 : "Right Speed",
+                   2 : "Yaw",
+                   3 : "Left Current",
+                   4 : "Right Current"}
+    
+    num_controllers = len(controllers)
+    
+    # Struct format for packing/unpacking. Little-endian no padding.
+    data_format = '<' + ('f' * 7)
+    
+    def __init__(self, **kargs):
+        '''Constructor'''
+        self.instance = kargs.get('instance', 1)
+        
+        self.kp = kargs.get('kp', 0)
+        self.ki = kargs.get('ki', 0)
+        self.kd = kargs.get('kd', 0)
+        self.integral_lolimit = -kargs.get('int_sat_limit', 0)
+        self.integral_hilimit = kargs.get('int_sat_limit', 0)
+        self.lolimit = -kargs.get('sat_limit', 0)
+        self.hilimit = kargs.get('sat_limit', 0)
+
+    def pack(self):
+        
+        return struct.pack(PidParams.data_format, self.kp, self.ki, self.kd, 
+                           self.integral_lolimit, self.integral_hilimit,
+                           self.lolimit, self.hilimit)
+
+    def unpack(self, data_bytes):
+        
+        values = struct.unpack(PidParams.data_format, data_bytes)
+        self.kp = values[0]
+        self.ki = values[1]
+        self.kd = values[2]
+        self.integral_lolimit = values[3]
+        self.integral_hilimit = values[4]
+        self.lolimit = values[5]
+        self.hilimit = values[6]
+        
+class Request(Glob):
+    
+    # Special ID for requesting globs
+    id = GlobID.Request
+
+    # Struct format for packing/unpacking. Little-endian no padding.
+    data_format = '<B'
+    
+    def __init__(self, requested_id, instance=1):
+        '''Constructor'''
+        self.instance = instance
+        self.requested_id = requested_id
+
+    def pack(self):
+
+        return struct.pack(Request.data_format, self.requested_id)
