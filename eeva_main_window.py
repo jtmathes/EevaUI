@@ -35,6 +35,7 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         self.horizontalRadioButton.clicked.connect(self.horizontal_mode_selected)
         self.followLineRadioButton.clicked.connect(self.line_follow_mode_selected)
         self.experimentRadioButton.clicked.connect(self.experiment_mode_selected)
+        self.customRadioButton.clicked.connect(self.custom_mode_selected)
         
         # Experiment selection
         self.experimentComboBox.activated.connect(self.new_experiment_selected)
@@ -117,7 +118,9 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
     def line_follow_mode_selected(self):
         self.controller.change_robot_mode(Modes.line_follow)
     def experiment_mode_selected(self):
-        self.controller.change_robot_mode(Modes.experiment)    
+        self.controller.change_robot_mode(Modes.experiment)
+    def custom_mode_selected(self):
+        self.controller.change_robot_mode(Modes.custom)     
     
     def select_balance_mode(self):
         self.balanceRadioButton.setChecked(True)

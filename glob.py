@@ -190,6 +190,7 @@ class Modes(Glob):
     horizontal = 1
     line_follow = 2
     experiment = 3
+    custom = 4
     
     # Operating State IDs
     stopped = 0

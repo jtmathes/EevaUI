@@ -309,7 +309,7 @@
              <item>
               <widget class="QRadioButton" name="followLineRadioButton">
                <property name="text">
-                <string>Follow Line</string>
+                <string>Line Following</string>
                </property>
               </widget>
              </item>
@@ -317,6 +317,13 @@
               <widget class="QRadioButton" name="experimentRadioButton">
                <property name="text">
                 <string>Experiment</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="customRadioButton">
+               <property name="text">
+                <string>Custom</string>
                </property>
               </widget>
              </item>
