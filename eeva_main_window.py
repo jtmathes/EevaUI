@@ -74,6 +74,11 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         self.manualIncrementLineEdit.editingFinished.connect(self.manual_command_increment_edited)
         self.manualCommandDecreaseButton.clicked.connect(self.manual_command_decrease_clicked)
         self.manualCommandIncreaseButton.clicked.connect(self.manual_command_incease_clicked)
+        
+        # Experiment input type
+        self.manualGroupBox.clicked.connect(self.manual_input_clicked)
+        self.autoWaveGroupBox.clicked.connect(self.autowave_input_clicked)
+        self.manualGroupBox.setChecked(False)
 
         self.settings = QtCore.QSettings("NER", "EevaUI")
         
@@ -317,6 +322,19 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         self.badCRCLineEdit.setText(str(new))
     def set_dropped_msgs(self, new):
         self.droppedLineEdit.setText(str(new))
+        
+    # Experiment input types
+    def autowave_input_clicked(self):
+        if self.autoWaveGroupBox.isChecked():
+            self.manualGroupBox.setChecked(False)
+        else:
+            self.manualGroupBox.setChecked(True)
+            
+    def manual_input_clicked(self):
+        if self.manualGroupBox.isChecked():
+            self.autoWaveGroupBox.setChecked(False)
+        else:
+            self.autoWaveGroupBox.setChecked(True)
 
     # Wave types
     def trapezoid_wave_selected(self):
@@ -351,7 +369,7 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
     def run_wave_continuous(self):
         return bool(self.runWaveContinuousCheckBox.isChecked())
     def run_wave_on_startup(self):
-        return bool(self.runWaveOnStartCheckbox.isChecked())
+        return bool(self.autoWaveGroupBox.isChecked())
     
     def wave_parameters_changed(self):
         self.controller.validate_wave_parameters()
