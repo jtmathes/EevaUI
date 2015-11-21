@@ -60,7 +60,6 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         self.satLimitLineEdit.editingFinished.connect(self.pid_parameters_changed)
         self.intSatLimitLineEdit.editingFinished.connect(self.pid_parameters_changed)
         
-        
         # Wave settings
         self.sineRadioButton.setChecked(True)
         self.trapezoidRadioButton.clicked.connect(self.trapezoid_wave_selected)

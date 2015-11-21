@@ -18,7 +18,7 @@ FASTEST_CAPTURE_RATE = 10000.0 # Hz
 DEFAULT_CAPTURE_RATE = FASTEST_CAPTURE_RATE / 100 # Hz
 
 # Connection settings
-LINK_STATS_TIMER_INTERVAL = 1 # seconds
+LINK_STATS_TIMER_INTERVAL = 0.25 # seconds
 
 # Wave parameters
 DEFAULT_WAVE_MAGNITUDE = 1
@@ -59,6 +59,9 @@ class EevaController:
         # Last main mode sent to the robot. 
         self.last_main_mode = Modes.balance
         self.last_sub_mode = 0
+        
+        # How many consecutive times we haven't received any bytes in timer callback when connected to robot.
+        self.num_times_no_bytes_received = 0
         
         # List of PID parameters for controllers.
         self.pid_params = [PidParams()] * PidParams.num_controllers
@@ -271,10 +274,27 @@ class EevaController:
             # Save so can calculate bytes per second next time
             self.last_bytes_tx = bytes_tx
             self.last_bytes_rx = bytes_rx
-
+            
+            self.check_for_lost_connection(bytes_rx, bps_rx)
+            
         finally:
             # Constantly reschedule timer to avoid overlapping calls
             QTimer.singleShot(LINK_STATS_TIMER_INTERVAL * 1000, self.link_timer_elapsed)
+        
+    def check_for_lost_connection(self, bytes_rx, bps_rx):
+        
+        if self.link.connection_open() and bytes_rx > 0:
+            
+            if bps_rx == 0:
+                self.num_times_no_bytes_received += 1
+            else:
+                self.num_times_no_bytes_received = 0
+                
+            no_bytes_received_duration = self.num_times_no_bytes_received * LINK_STATS_TIMER_INTERVAL
+            
+            if no_bytes_received_duration >= 1.25:
+                self.display_message("Lost connection to Eeva")
+                self.disconnect_from_port()
         
     def connect_to_port(self, port_name):
         
