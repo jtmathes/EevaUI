@@ -290,11 +290,13 @@ class PidParams(Glob):
     id = GlobID.PidParams
     
     # Controller IDs. Text labels so can show on form.
-    controllers = {0 : "Left Speed",
-                   1 : "Right Speed",
+    controllers = {0 : "Left Wheel Speed",
+                   1 : "Right Wheel Speed",
                    2 : "Yaw",
-                   3 : "Left Current",
-                   4 : "Right Current"}
+                   3 : "Left Motor Current",
+                   4 : "Right Motor Current",
+                   5 : "Balance Tilt",
+                   6 : "Balance Position"}
     
     num_controllers = len(controllers)
     
