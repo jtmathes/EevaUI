@@ -44,24 +44,3 @@ class SerialConnection(serial.Serial):
                 break
             
         serial.Serial.close(self)
-
-def list_serial_ports():
-    '''Return list of available serial port names.'''
-    if sys.platform.startswith('win'):
-        port_names = ['COM%s' % (i + 1) for i in range(256)]
-    elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
-        port_names = glob('/dev/tty[A-Za-z]*')
-    elif sys.platform.startswith('darwin'):
-        port_names = glob('/dev/tty.*')
-    else:
-        raise EnvironmentError('Unsupported platform')
-
-    available_port_names = []
-    for port_name in port_names:
-        try:
-            s = serial.Serial(port_name)
-            s.close()
-            available_port_names.append(port_name)
-        except (OSError, serial.SerialException):
-            pass
-    return available_port_names

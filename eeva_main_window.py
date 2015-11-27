@@ -20,6 +20,7 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         # Set up the user interface from Designer.
         self.setupUi(self)
         
+        self.app = app
         self.controller = controller
         
         # Main Command Buttons
@@ -89,6 +90,9 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
 
     def _need_to_switch_thread(self):
         return not isinstance(threading.current_thread(), threading._MainThread)
+
+    def process_events(self):
+        self.app.processEvents()
 
     def start_button_clicked(self):
         self.controller.send_robot_command(RobotCommand.start)

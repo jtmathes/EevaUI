@@ -5,7 +5,6 @@ import os
 import sys
 import time
 import subprocess
-from serial_extension import list_serial_ports
 from glob import *
 
 from PyQt4.QtCore import QTimer 
@@ -293,11 +292,14 @@ class EevaController:
             no_bytes_received_duration = self.num_times_no_bytes_received * LINK_STATS_TIMER_INTERVAL
             
             if no_bytes_received_duration >= 1.25:
-                self.display_message("Lost connection to Eeva")
+                self.display_message("Eeva not responding...")
                 self.disconnect_from_port()
+                self.display_message("If robot is still on and was always in range then make sure your operating system isn't using a power-save mode for bluetooth.")
         
     def connect_to_port(self, port_name):
         
+        self.display_message("Connecting...")
+        self.view.process_events()
         try:
             self.link.connect(port_name, self.new_message_callback)
             self.link_connected = True
@@ -309,13 +311,13 @@ class EevaController:
             self.request_controller_gains_from_robot()
             
         except serial.SerialException as e:
-            self.display_message('Failed to open {}.\n{}'.format(port_name, e))
+            self.display_message('Error {}\nTry to connect again.'.format(e))
             self.link.disconnect()
             self.link_connected = False
             
         if self.link_connected:
             
-            self.display_message('Opened port {}'.format(port_name))
+            self.display_message("Success")
             
             self.view.set_connect_button_text('Disconnect')
             
@@ -324,7 +326,7 @@ class EevaController:
         self.link.disconnect()
         self.link_connected = False
         self.view.set_connect_button_text('Connect')
-        self.display_message('Port closed')
+        self.display_message('Disconnected')
     
     def new_message_callback(self, id, instance, body):
         
