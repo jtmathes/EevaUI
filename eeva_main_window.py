@@ -10,10 +10,11 @@ from PyQt4.QtCore import QMetaObject, QObject, QEvent, Qt, Q_ARG
 from PyQt4.QtGui import QMainWindow, QColor
 from eeva_designer import Ui_MainWindow
 from glob import DrivingCommand, RobotCommand, Modes, Wave, PidParams
+from validate_params import *
 
 class EevaMainWindow(QMainWindow, Ui_MainWindow):
     
-    def __init__(self, app, controller):
+    def __init__(self, app, controller, connection_controller):
         
         QMainWindow.__init__(self)
 
@@ -22,6 +23,7 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         
         self.app = app
         self.controller = controller
+        self.connection_controller = connection_controller
         
         # Main Command Buttons
         self.startButton.clicked.connect(self.start_button_clicked)
@@ -83,7 +85,7 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
 
         self.settings = QtCore.QSettings("NER", "EevaUI")
         
-    def restore_saved_settings(self):
+    def restore_default_port(self):
         '''Should be called after initializing view.'''
         saved_port = str(self.settings.value("default_port"))
         self.set_port(saved_port)
@@ -111,10 +113,10 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         self.controller.start_data_capture()
 
     def sample_rate_changed(self, *args):
-        self.controller.validate_capture_parameters()
+        validate_capture_parameters(self)
     
     def capture_samples_edited(self, *args):
-        self.controller.validate_capture_parameters()
+        validate_capture_parameters(self)
         
     def open_output_directory_clicked(self):
         self.controller.open_output_directory()
@@ -155,9 +157,9 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
             self.balanceRadioButton.setChecked(True)
             self.experimentComboBox.setCurrentIndex(0)
             port_name = str(self.portsComboBox.currentText())
-            self.controller.connect_to_port(port_name)
+            self.connection_controller.connect_to_port(port_name)
         else:
-            self.controller.disconnect_from_port()
+            self.connection_controller.disconnect_from_port()
            
     @QtCore.pyqtSlot(str)
     def set_start_and_capture_button_text(self, text):
@@ -194,6 +196,7 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
     def refresh_ports_button_clicked(self):
         
         self.controller.request_new_port_list()
+        self.restore_default_port()
         
     def save_default_port(self, port_name):
         '''Save port as default for next time application opens.'''
@@ -224,7 +227,7 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         self.controlComboBox.addItems(controller_names)
 
     def pid_parameters_changed(self):
-        self.controller.validate_pid_parameters(send=True)
+        validate_pid_parameters(self.controller, send=True)
         
     def controller_changed(self):
         self.controller.show_current_pid_params()
@@ -376,7 +379,7 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         return bool(self.autoWaveGroupBox.isChecked())
     
     def wave_parameters_changed(self):
-        self.controller.validate_wave_parameters()
+        validate_wave_parameters(self)
         
     # Manual experiment input
     def set_manual_command(self, new_value):
@@ -389,11 +392,11 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         return str(self.manualIncrementLineEdit.text())
     
     def manual_command_edited(self):
-        self.controller.validate_manual_command_parameters()
+        validate_manual_command_parameters(self)
         self.controller.send_manual_experiment_input()
         
     def manual_command_increment_edited(self):
-        self.controller.validate_manual_command_parameters()
+        validate_manual_command_parameters(self)
         
     def manual_command_decrease_clicked(self):
         increment = float(self.get_manual_command_increment())

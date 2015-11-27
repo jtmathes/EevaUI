@@ -1,36 +1,9 @@
-import serial
-import math
-import csv
 import os
 import sys
 import time
-import subprocess
 from glob import *
-
-from PyQt4.QtCore import QTimer 
-
-import numpy as np
-import scipy.io
-
-# Data capture parameters
-DEFAULT_NUM_SAMPLES = 300
-MIN_NUM_SAMPLES = 1
-MAX_NUM_SAMPLES = 2000
-FASTEST_CAPTURE_RATE = 10000.0 # Hz
-DEFAULT_CAPTURE_RATE = FASTEST_CAPTURE_RATE / 100 # Hz
-
-# Connection settings
-LINK_STATS_TIMER_INTERVAL = 0.25 # seconds
-
-# Wave parameters
-DEFAULT_WAVE_MAGNITUDE = 1
-DEFAULT_WAVE_OFFSET = 0
-DEFAULT_WAVE_FREQ = 1
-DEFAULT_WAVE_DURATION = 5
-
-# Manual command parameters
-DEFAULT_MANUAL_COMMAND = 0
-DEFAULT_MANUAL_INCREMENT = 1
+from eeva_io import *
+from validate_params import *
 
 class EevaController:
 
@@ -49,10 +22,6 @@ class EevaController:
         if not os.path.exists(self.session_directory):
             os.makedirs(self.session_directory)
         
-        # fields for tracking link stats
-        self.last_bytes_tx = 0
-        self.last_bytes_rx = 0
-        
         # list of actively received capture data (cleared after writing to file)
         self.capture_data = []
         
@@ -61,9 +30,6 @@ class EevaController:
         # Last main mode sent to the robot. 
         self.last_main_mode = Modes.balance
         self.last_sub_mode = 0
-        
-        # How many consecutive times we haven't received any bytes in timer callback when connected to robot.
-        self.num_times_no_bytes_received = 0
         
         # List of PID parameters for controllers.
         self.pid_params = [PidParams()] * PidParams.num_controllers
@@ -77,9 +43,6 @@ class EevaController:
         
         self.initialize_view(view)
         
-        # start link status timer
-        self.link_timer_elapsed()
-        
     def initialize_view(self, view):
         
         self.request_new_port_list()
@@ -90,18 +53,18 @@ class EevaController:
         self.view.set_generate_filename(False)
         self.view.set_capture_rate(DEFAULT_CAPTURE_RATE)
         self.view.set_capture_samples(DEFAULT_NUM_SAMPLES)
-        self.validate_capture_parameters()
+        validate_capture_parameters(view)
         
-        self.validate_wave_parameters()
-        self.validate_manual_command_parameters()
-        self.validate_pid_parameters(send=False)
+        validate_wave_parameters(view)
+        validate_manual_command_parameters(view)
+        validate_pid_parameters(self, send=False)
         
         self.view.set_experiment_list([Modes.experiments[k] for k in sorted(Modes.experiments.iterkeys())])
         self.view.set_experiment_list_visibility(False)
         
         self.view.set_controller_list([PidParams.controllers[k] for k in sorted(PidParams.controllers.iterkeys())])
         
-        self.view.restore_saved_settings()
+        self.view.restore_default_port()
         
     def send_robot_command(self, cmd_type):
         
@@ -173,73 +136,6 @@ class EevaController:
         self.capturing_data = False
         self.view.set_capture_button_text("Collect Data")
         
-    def validate_capture_parameters(self):
-        
-        rate = self.try_parse(self.view.get_capture_rate(), float, DEFAULT_CAPTURE_RATE)
-        rate = self.limit(rate, 0.001, FASTEST_CAPTURE_RATE)
-        samples = self.try_parse(self.view.get_capture_samples(), int, DEFAULT_NUM_SAMPLES)
-        samples = self.limit(samples, MIN_NUM_SAMPLES, MAX_NUM_SAMPLES)
-
-        # Account for the fact the MCU can only capture at certain rates.  
-        scale = int(FASTEST_CAPTURE_RATE / rate)
-        rate = FASTEST_CAPTURE_RATE / scale
-
-        duration = samples / rate
-
-        self.view.set_capture_rate(rate)
-        self.view.set_capture_samples(samples)
-        self.view.set_capture_duration(duration)
-        
-        return duration
-    
-    def validate_wave_parameters(self):
-        
-        mag = self.try_parse(self.view.get_wave_mag(), float, DEFAULT_WAVE_MAGNITUDE)
-        mag = self.limit(mag, 0, 1e10)
-        offset = self.try_parse(self.view.get_wave_offset(), float, DEFAULT_WAVE_OFFSET)
-        offset = self.limit(offset, -1e10, 1e10)
-        freq = self.try_parse(self.view.get_wave_freq(), float, DEFAULT_WAVE_FREQ)
-        freq = self.limit(freq, 0.00001, 1e10)
-        duration = self.try_parse(self.view.get_wave_duration(), float, DEFAULT_WAVE_DURATION)
-        duration = self.limit(duration, 0, 1e10)
-
-        self.view.set_wave_mag(mag)
-        self.view.set_wave_offset(offset)
-        self.view.set_wave_freq(freq)
-        self.view.set_wave_duration(duration)
-        
-    def validate_pid_parameters(self, send=False):
-        
-        view_params = self.view.get_pid_parameters()
-        params = PidParams()
-        params.kp = self.try_parse(view_params['kp'], float, 0)
-        params.ki = self.try_parse(view_params['ki'], float, 0)
-        params.kd = self.try_parse(view_params['kd'], float, 0)
-        params.hilimit = self.try_parse(view_params['sat_limit'], float, 0)
-        params.lolimit = -params.hilimit
-        params.integral_hilimit = self.try_parse(view_params['int_sat_limit'], float, 0)
-        params.integral_lolimit = -params.integral_hilimit
-
-        self.view.set_pid_parameters(params)
-        
-        pid_idx = self.view.get_controller_index()
-        params.instance = pid_idx + 1;
-        
-        if send:
-            # Save before sending so we don't need to request new value.
-            self.pid_params[pid_idx] = params
-            self.link.send(params)
-        
-    def validate_manual_command_parameters(self):
-        
-        command = self.try_parse(self.view.get_manual_command(), float, DEFAULT_MANUAL_COMMAND)
-        command = self.limit(command, -1e10, 1e10)
-        increment = self.try_parse(self.view.get_manual_command_increment(), float, DEFAULT_MANUAL_INCREMENT)
-        increment = self.limit(increment, -1e10, 1e10)
-
-        self.view.set_manual_command(command)
-        self.view.set_manual_command_increment(increment)
-        
     def change_manual_command(self, amount):
         
         command = float(self.view.get_manual_command())
@@ -255,81 +151,6 @@ class EevaController:
         msg = Wave(wave_type=Wave.constant, offset=command, run_continuous=True)
         
         self.link.send(msg)
-        
-    def link_timer_elapsed(self):
-
-        try:
-            bytes_tx = self.link.num_bytes_sent
-            bytes_rx = self.link.num_bytes_received
-
-            # Estimate bytes per second.  Assume timer actually elapses close to desired rate.
-            bps_tx = max(0, int((bytes_tx - self.last_bytes_tx) / LINK_STATS_TIMER_INTERVAL))
-            bps_rx = max(0, int((bytes_rx - self.last_bytes_rx) / LINK_STATS_TIMER_INTERVAL))
-            
-            self.view.set_num_msgs_sent(self.link.num_messages_sent)
-            self.view.set_num_msgs_received(self.link.num_messages_received)
-            self.view.set_bps_sent(bps_tx)
-            self.view.set_bps_received(bps_rx)
-            self.view.set_bad_crc(self.link.num_bad_crc_messages)
-            self.view.set_dropped_msgs(self.link.num_dropped_messages)
-            
-            # Save so can calculate bytes per second next time
-            self.last_bytes_tx = bytes_tx
-            self.last_bytes_rx = bytes_rx
-            
-            self.check_for_lost_connection(bytes_rx, bps_rx)
-            
-        finally:
-            # Constantly reschedule timer to avoid overlapping calls
-            QTimer.singleShot(LINK_STATS_TIMER_INTERVAL * 1000, self.link_timer_elapsed)
-        
-    def check_for_lost_connection(self, bytes_rx, bps_rx):
-        
-        if self.link.connection_open() and bytes_rx > 0:
-            
-            if bps_rx == 0:
-                self.num_times_no_bytes_received += 1
-            else:
-                self.num_times_no_bytes_received = 0
-                
-            no_bytes_received_duration = self.num_times_no_bytes_received * LINK_STATS_TIMER_INTERVAL
-            
-            if no_bytes_received_duration >= 1.25:
-                self.display_message("Eeva not responding...")
-                self.disconnect_from_port()
-                self.display_message("If robot is still on and was always in range then make sure your operating system isn't using a power-save mode for bluetooth.")
-        
-    def connect_to_port(self, port_name):
-        
-        self.display_message("Connecting...")
-        self.view.process_events()
-        try:
-            self.link.connect(port_name, self.new_message_callback)
-            self.link_connected = True
-            self.view.save_default_port(port_name)
-            
-            # In case we got left in a bad state.
-            self.stop_data_capture()
-            
-            self.request_controller_gains_from_robot()
-            
-        except serial.SerialException as e:
-            self.display_message('Error {}\nTry to connect again.'.format(e))
-            self.link.disconnect()
-            self.link_connected = False
-            
-        if self.link_connected:
-            
-            self.display_message("Success")
-            
-            self.view.set_connect_button_text('Disconnect')
-            
-    def disconnect_from_port(self):
-        
-        self.link.disconnect()
-        self.link_connected = False
-        self.view.set_connect_button_text('Connect')
-        self.display_message('Disconnected')
     
     def new_message_callback(self, id, instance, body):
         
@@ -397,15 +218,6 @@ class EevaController:
             params = PidParams()
             
         self.view.set_pid_parameters(params)
-        
-    def request_new_port_list(self):
-        
-        self.display_message('Refreshing ports')
-        
-        from serial.tools import list_ports
-        port_list = [l[0] for l in list_ports.comports()]
-    
-        self.view.show_serial_ports(port_list)
     
     def request_controller_gains_from_robot(self):
         
@@ -455,7 +267,7 @@ class EevaController:
     
             filename = "data_" + time.strftime("%Y-%m-%d-%H-%M-%S")
             
-        filename = self.make_filename_unique(self.session_directory, filename)
+        filename = make_filename_unique(self.session_directory, filename)
             
         # update text box so user can see actually used name
         self.view.set_data_capture_filename(filename)
@@ -469,89 +281,22 @@ class EevaController:
         column_names = ('time', 'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8')
         
         try:
-            self.write_to_csv(csv_filepath, column_names, self.capture_data)
+            write_to_csv(csv_filepath, column_names, self.capture_data)
             self.display_message('Created {}'.format(csv_filename))
-            self.write_to_matlab_data_file(matlab_filepath, column_names, self.capture_data)
+            write_to_matlab_data_file(matlab_filepath, column_names, self.capture_data)
             self.display_message('Created {}'.format(matlab_filename))
         except IOError:
             self.display_message('IO Error. Filename {} is most likely invalid.'.format(csv_filename))
-        
-    def write_to_csv(self, filepath, column_names, data):
-        
-        with open(filepath, 'wb') as outfile:
-            writer = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            writer.writerow(column_names)
-            writer.writerows(data) 
-            
-    def write_to_matlab_data_file(self, filepath, column_names, data):
-        data = np.array(data)
-        scipy.io.savemat(filepath, mdict={'d': data})
-            
-    def write_to_matlab_script_file(self, filepath, column_names, data):
-        with open(filepath, 'w') as outfile:
-            outfile.write('% {}\n'.format(" ".join(column_names)))
-            outfile.write('d = ...\n')
-            outfile.write('[' + "\n ".join(" ".join("%g" % val for val in line) for line in data) + '];')
 
     def open_output_directory(self):
+        open_output_directory_in_viewer(self.session_directory, self)
         
-        if sys.platform=='win32':
-            os.startfile(self.session_directory)
-        elif sys.platform=='darwin':
-            subprocess.Popen(['open', self.session_directory])
-        else:
-            try:
-                subprocess.Popen(['xdg-open', self.session_directory])
-            except OSError:
-                self.display_message("OS not supported.")
-
-    def limit(self, val, min_val, max_val):
+    def request_new_port_list(self):
         
-        val_type = type(val)
-        if val > max_val:
-            return val_type(max_val)
-        if val < min_val:
-            return val_type(min_val)
-        return val
+        self.display_message('Refreshing ports')
+        
+        from serial.tools import list_ports
+        port_list = [l[0] for l in list_ports.comports()]
     
-    def try_parse(self, value, cast_type, default_value):
-        
-        try:
-            value = cast_type(value)
-        except ValueError:
-            value = cast_type(default_value)
-        return value
-    
-    def make_filepath_unique(self, path):
-        
-        _, fname = os.path.split(path)
-        just_fname, ext = os.path.splitext(fname)[1]
-        
-        i = 1 # number to append_to file name
-        while os.path.exists(path):
-
-            new_fname = '{}_{}{}'.format(just_fname, i, ext)
-            path = os.path.join(dir, new_fname)
-            i += 1
-            
-        return path
-
-    def make_filename_unique(self, directory, fname_no_ext):
-        
-        original_fname = fname_no_ext
-        dir_contents = os.listdir(directory)
-        dir_fnames = [os.path.splitext(c)[0] for c in dir_contents]
-        
-        while fname_no_ext in dir_fnames:
-            
-            try:
-                v = fname_no_ext.split('_')
-                i = int(v[-1])
-                i += 1
-                fname_no_ext = '_'.join(v[:-1] + [str(i)])
-            except ValueError:
-                fname_no_ext = '{}_{}'.format(original_fname, 1)
-
-        return fname_no_ext
-
+        self.view.show_serial_ports(port_list)
         
