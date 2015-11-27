@@ -9,6 +9,9 @@ from glob import *
 
 from PyQt4.QtCore import QTimer 
 
+import numpy as np
+import scipy.io
+
 # Data capture parameters
 DEFAULT_NUM_SAMPLES = 300
 MIN_NUM_SAMPLES = 1
@@ -459,13 +462,17 @@ class EevaController:
             
         csv_filename = filename + ".csv"
         csv_filepath = os.path.join(self.session_directory, csv_filename)
-        #csv_filepath = self.make_filepath_unique(csv_filepath)
-        
+
+        matlab_filename = filename + ".mat"
+        matlab_filepath = os.path.join(self.session_directory, matlab_filename)
+
         column_names = ('time', 'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8')
         
         try:
             self.write_to_csv(csv_filepath, column_names, self.capture_data)
-            self.display_message('Created file {}'.format(csv_filename))
+            self.display_message('Created {}'.format(csv_filename))
+            self.write_to_matlab_data_file(matlab_filepath, column_names, self.capture_data)
+            self.display_message('Created {}'.format(matlab_filename))
         except IOError:
             self.display_message('IO Error. Filename {} is most likely invalid.'.format(csv_filename))
         
@@ -475,6 +482,16 @@ class EevaController:
             writer = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             writer.writerow(column_names)
             writer.writerows(data) 
+            
+    def write_to_matlab_data_file(self, filepath, column_names, data):
+        data = np.array(data)
+        scipy.io.savemat(filepath, mdict={'d': data})
+            
+    def write_to_matlab_script_file(self, filepath, column_names, data):
+        with open(filepath, 'w') as outfile:
+            outfile.write('% {}\n'.format(" ".join(column_names)))
+            outfile.write('d = ...\n')
+            outfile.write('[' + "\n ".join(" ".join("%g" % val for val in line) for line in data) + '];')
 
     def open_output_directory(self):
         
