@@ -46,6 +46,8 @@ Thumbs.db
 [Ll]st/
 [Oo]bject/
 [Oo]bj/
+[Bb]uild/
+[Dd]ist/
 EevaOutput/
 .settings/
 
@@ -72,4 +74,5 @@ EevaOutput/
 *.depend
 *.elay
 *.html
+*.spec
 
