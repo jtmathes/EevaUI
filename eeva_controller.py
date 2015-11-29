@@ -113,7 +113,7 @@ class EevaController:
         else: 
             self.start_data_capture()
         
-    def start_data_capture(self):
+    def start_data_capture(self, paused=False):
         
         if self.capturing_data:
             self.display_message("Need to finish collecting data first.")
@@ -122,7 +122,7 @@ class EevaController:
         
         rate = float(self.view.get_capture_rate())
         samples = int(self.view.get_capture_samples())
-        msg = CaptureCommand(is_start=1, freq=rate, desired_samples=samples)
+        msg = CaptureCommand(is_start=1, paused=paused, freq=rate, desired_samples=samples)
         self.link.send(msg)
         
         self.capturing_data = True

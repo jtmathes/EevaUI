@@ -109,8 +109,8 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         self.controller.change_capture_status()
         
     def start_and_collect_data_button_clicked(self):
+        self.controller.start_data_capture(paused=True)
         self.controller.send_robot_command(RobotCommand.start)
-        self.controller.start_data_capture()
 
     def sample_rate_changed(self, *args):
         validate_capture_parameters(self)

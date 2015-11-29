@@ -104,25 +104,25 @@ class CaptureCommand(Glob):
     # Struct format for packing/unpacking. Little-endian no padding.
     data_format = '<BBHII'
     
-    def __init__(self, is_start=0, freq=1, desired_samples=1, total_samples=1, instance=1):
+    def __init__(self, is_start=0, paused=0, freq=1, desired_samples=1, total_samples=1, instance=1):
         '''Constructor'''
         self.instance = instance
         self.is_start = is_start
-        self.pad0 = 0
+        self.paused = paused
         self.freq = freq
         self.desired_samples = desired_samples
         self.total_samples = total_samples
 
     def pack(self):
         
-        return struct.pack(CaptureCommand.data_format, self.is_start, self.pad0, self.freq,
+        return struct.pack(CaptureCommand.data_format, self.is_start, self.paused, self.freq,
                             self.desired_samples, self.total_samples)
 
     def unpack(self, data_bytes):
         
         values = struct.unpack(CaptureCommand.data_format, data_bytes)
         self.is_start = values[0]
-        self.pad0 = values[1]
+        self.paused = values[1]
         self.freq = values[2]
         self.desired_samples = values[3]
         self.total_samples = values[4]
@@ -251,7 +251,9 @@ class Wave(Glob):
     
     # wave states
     stopped = 0
-    started = 1
+    ready_to_start = 1
+    starting_up = 2
+    started = 3
     
     # Struct format for packing/unpacking. Little-endian no padding.
     data_format = '<BBBBfffffffBBBB' + (15 * 'f')
