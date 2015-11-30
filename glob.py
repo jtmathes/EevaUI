@@ -298,7 +298,8 @@ class PidParams(Glob):
                    3 : "Left Motor Current",
                    4 : "Right Motor Current",
                    5 : "Balance Tilt",
-                   6 : "Balance Position"}
+                   6 : "Balance Position",
+                   7 : "Line Following"}
     
     num_controllers = len(controllers)
     
