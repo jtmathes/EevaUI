@@ -95,6 +95,9 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
 
     def process_events(self):
         self.app.processEvents()
+        
+    def get_driving_command_states(self):
+        return self.key_press_filter.command_state
 
     def start_button_clicked(self):
         self.controller.send_robot_command(RobotCommand.start)
@@ -418,17 +421,28 @@ class DrivingKeyFilter(QObject):
     def __init__(self, controller):
         QObject.__init__(self)
         self.controller = controller
+        self.command_state = {}
 
     def eventFilter(self, obj, event):
         
-        if (event.type() == QEvent.KeyPress) and self.controller.driving_mode_enabled:
-
-            cmd = self.convert_key_to_driving_command(event.key())
+        if self.controller.driving_mode_enabled:
             
-            if cmd is not None:
-                self.controller.handle_driving_command(cmd)
-                return True # don't pass on key press
+            if (event.type() == QEvent.KeyPress):
+                    
+                cmd = self.convert_key_to_driving_command(event.key())
+                if cmd is not None:
+                    if not event.isAutoRepeat():
+                        self.command_state[cmd] = True
+                    return True # don't pass on key press
 
+            elif (event.type() == QEvent.KeyRelease):
+                    
+                cmd = self.convert_key_to_driving_command(event.key())
+                if cmd is not None:
+                    if not event.isAutoRepeat():
+                        self.command_state[cmd] = False
+                    return True # don't pass on key release 
+                    
         return False  # event wasn't handled      
     
     def convert_key_to_driving_command(self, key):

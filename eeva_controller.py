@@ -5,6 +5,10 @@ from glob import *
 from eeva_io import *
 from validate_params import *
 
+from PyQt4.QtCore import QTimer 
+
+DRIVING_TIMER_INTERVAL = 0.1 # seconds
+
 class EevaController:
 
     def __init__(self, link):
@@ -65,6 +69,24 @@ class EevaController:
         self.view.set_controller_list([PidParams.controllers[k] for k in sorted(PidParams.controllers.iterkeys())])
         
         self.view.restore_default_port()
+        
+        self.driving_timer_elapsed()
+        
+    def driving_timer_elapsed(self):
+        '''Send driving commands based on which keys are currently pressed down.'''
+        try:
+            if self.driving_mode_enabled:
+                
+                states = self.view.get_driving_command_states()
+                
+                for cmd, state in states.iteritems():
+                    if state:
+                        msg = DrivingCommand(movement_type = cmd)
+                        self.link.send(msg)
+            
+        finally:
+            # Constantly reschedule timer to avoid overlapping calls
+            QTimer.singleShot(DRIVING_TIMER_INTERVAL * 1000, self.driving_timer_elapsed)
         
     def send_robot_command(self, cmd_type):
         
@@ -239,14 +261,6 @@ class EevaController:
         
         # Toggle driving mode
         self.driving_mode_enabled = not self.driving_mode_enabled
-        
-    def handle_driving_command(self, cmd):
-        
-        if not self.driving_mode_enabled:
-            return False # didn't handle key
-
-        msg = DrivingCommand(movement_type = cmd)
-        self.link.send(msg)
         
     def write_data_to_file(self):
         
