@@ -200,7 +200,7 @@ class Modes(Glob):
     # Experiment sub IDs. Text labels so can show on form.
     experiments = {0 : "None",
                    1 : "Motor Speed Control",
-                   2 : "Some Other Experiment"}
+                   2 : "Motor Current Control"}
     
     # Struct format for packing/unpacking. Little-endian no padding.
     data_format = '<BBB'
