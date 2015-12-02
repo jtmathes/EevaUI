@@ -1,5 +1,6 @@
 import serial
 from glob import *
+from version import current_gui_version, compatible_versions
 
 from PyQt4.QtCore import QTimer 
 
@@ -29,7 +30,7 @@ class ConnectionController(object):
         
         self.view.clear_all_messages()
         self.controller.display_message("Connecting...")
-        self.view.process_events()
+        self.view.process_events() # immediately show message in case GUI locks up for a little bit
         try:
             self.link.connect(port_name, self.controller.new_message_callback)
             self.link_connected = True
@@ -46,10 +47,10 @@ class ConnectionController(object):
             self.link_connected = False
             
         if self.link_connected:
-            
             self.controller.display_message("Success")
-            
             self.view.set_connect_button_text('Disconnect')
+            # make sure flag is reset so GUI verifies firmware version
+            self.controller.verified_firmware_version = False
             
     def disconnect_from_port(self):
         

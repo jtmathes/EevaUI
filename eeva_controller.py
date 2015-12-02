@@ -4,6 +4,7 @@ import time
 from glob import *
 from eeva_io import *
 from validate_params import *
+from version import *
 
 from PyQt4.QtCore import QTimer 
 
@@ -38,6 +39,10 @@ class EevaController:
         # List of PID parameters for controllers.
         self.pid_params = [PidParams()] * PidParams.num_controllers
         
+        # Set to true once robot's firmware version has been checked for compatibility issues with GUI.
+        # Should be reset after each connection to the robot.
+        self.verified_firmware_version = False
+        
         # What different message sources show as which color.
         self.source_display_colors = {'ui':'black', 'robot':'blue', 'assert':'red'}
 
@@ -48,6 +53,8 @@ class EevaController:
         self.initialize_view(view)
         
     def initialize_view(self, view):
+        
+        self.display_message('GUI version: {}'.format(current_gui_version))
         
         self.request_new_port_list()
         
@@ -87,6 +94,21 @@ class EevaController:
         finally:
             # Constantly reschedule timer to avoid overlapping calls
             QTimer.singleShot(DRIVING_TIMER_INTERVAL * 1000, self.driving_timer_elapsed)
+        
+    def verify_firmware_version(self, firmware_version):
+
+        self.display_message("Eeva version: {}".format(firmware_version))
+        
+        compatible_firmware_versions = compatible_versions.get(current_gui_version, [])
+        
+        if firmware_version not in compatible_firmware_versions:
+            self.display_message("Warning: Eeva version {} not compatible with GUI version {}.".format(firmware_version, current_gui_version))
+            self.display_message("List of compatible Eeva versions is:")
+            self.display_message(str(compatible_firmware_versions))
+            self.display_message("List of GUI versions that are compatible with Eeva version is:")
+            self.display_message(str(list_compatible_gui_versions(firmware_version)))
+        
+        self.verified_firmware_version = True
         
     def send_robot_command(self, cmd_type):
         
@@ -187,6 +209,9 @@ class EevaController:
         elif id == GlobID.StatusData:
             msg = StatusData.from_bytes(body)
             self.view.update_robot_status(msg.data)
+            
+            if not self.verified_firmware_version:
+                self.verify_firmware_version(msg.data['firmware_version'])
             
         elif id == GlobID.CaptureData:
             

@@ -5,6 +5,7 @@ from eeva_main_window import EevaMainWindow
 from eeva_controller import EevaController
 from connection_controller import ConnectionController
 from glob_link import GlobLink
+from version import current_gui_version
 from PyQt4 import QtGui
 
 if __name__ == '__main__':
@@ -29,6 +30,7 @@ if __name__ == '__main__':
     connection_controller.set_view(window)
     connection_controller.start_link_timer()
     
+    window.setWindowTitle('EevaUI - v{}'.format(current_gui_version))
     window.show()
 
     sys.exit(app.exec_())
