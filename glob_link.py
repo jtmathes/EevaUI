@@ -26,6 +26,7 @@ class ParserThread(threading.Thread):
         self.data_idx = 0 # Index of where to store next received byte in message data array.
         self.expected_crc1 = 0 # lower byte of checksum at end of message
         self.expected_crc2 = 0 # upper byte " "
+        self.last_rx_packet_num = 0 # from 0-255. Counted up each time to detect dropped packets.
         
         self.num_messages_received = 0
         self.num_bytes_received = 0
@@ -58,13 +59,13 @@ class ParserThread(threading.Thread):
                     self.data_idx += 1
                     self.advance_parse()
                     
-            elif self.parse_state >= 0 and self.parse_state <= 2:
-                # Pull out id and both bytes of instance.
+            elif self.parse_state >= 0 and self.parse_state <= 3:
+                # Pull out id and both bytes of instance and packet number.
                 self.message_data[self.data_idx] = byte
                 self.data_idx += 1
                 self.advance_parse()
                 
-            elif self.parse_state == 3:
+            elif self.parse_state == 4:
                 self.message_data[self.data_idx] = byte
                 self.data_idx += 1
                 self.num_body_bytes = byte
@@ -73,25 +74,24 @@ class ParserThread(threading.Thread):
                 if self.num_body_bytes == 0:
                     self.advance_parse() # go straight to checksum
                 
-            elif self.parse_state == 4:
+            elif self.parse_state == 5:
                 self.message_data[self.data_idx] = byte
                 self.data_idx += 1
                 if self.data_idx - self.body_start_idx >= self.num_body_bytes:
                     self.body_end_idx = self.data_idx
                     self.advance_parse()
                     
-            elif self.parse_state == 5:
+            elif self.parse_state == 6:
                 self.expected_crc1 = byte
                 self.advance_parse()
                 
-            elif self.parse_state == 6:
+            elif self.parse_state == 7:
                 self.expected_crc2 = byte
                 message_pending = True
                 
             else:
                 self.reset_parse() # safety reset
                 
-
             if message_pending:
                 message_pending = False
                 if self.verify_crc():
@@ -125,10 +125,19 @@ class ParserThread(threading.Thread):
         id = self.message_data[1]
         instance1 = self.message_data[2]
         instance2 = self.message_data[3]
-        instance = instance1 + (instance2 << 8) 
+        instance = instance1 + (instance2 << 8)
+        packet_num = self.message_data[4]
         body = self.message_data[self.body_start_idx : self.body_end_idx]
         
         self.new_message_callback(id, instance, body)
+        
+        if self.num_messages_received > 1:
+            # Check for dropped packet's
+            expected_packet_num = self.last_rx_packet_num + 1
+            expected_packet_num = expected_packet_num if expected_packet_num < 256 else 0 
+            self.num_dropped_messages += max(0, packet_num - expected_packet_num)
+        
+        self.last_rx_packet_num = packet_num
 
 class GlobLink(object):
     
@@ -147,6 +156,7 @@ class GlobLink(object):
         self.num_messages_sent = 0
         #self.transfer_buffer = array.array('c', '\0' * 300)
         self.transfer_buffer = bytearray(300)
+        self.next_packet_num = 0 # used to detect dropped packets
         
     def connect(self, port_name, new_message_callback):
         
@@ -196,9 +206,9 @@ class GlobLink(object):
         body_bytes = glob.pack()
         body_size = len(body_bytes)
         
-        header_fmt = '<BBHB'
-        header = (self.message_start_byte, glob.id, glob.instance, body_size)
-        header_size = 5
+        header_fmt = '<BBHBB'
+        header = (self.message_start_byte, glob.id, glob.instance, self.next_packet_num, body_size)
+        header_size = 6
         
         struct.pack_into(header_fmt, self.transfer_buffer, 0, *header)
         
@@ -215,7 +225,10 @@ class GlobLink(object):
         
         self.num_bytes_sent += message_size
         self.num_messages_sent += 1
-        
+        self.next_packet_num += 1
+        if self.next_packet_num > 255:
+            self.next_packet_num = 0
+
     @property
     def num_messages_received(self):
         if self.parser:
