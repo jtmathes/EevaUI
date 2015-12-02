@@ -223,6 +223,9 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
             return
         self.messageCenterTextEdit.setTextColor(QColor(color))
         self.messageCenterTextEdit.append(message)
+        
+    def clear_all_messages(self):
+        self.messageCenterTextEdit.clear()
           
     # PID Parameters
     def set_controller_list(self, controller_names):

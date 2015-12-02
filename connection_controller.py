@@ -27,6 +27,7 @@ class ConnectionController(object):
         
     def connect_to_port(self, port_name):
         
+        self.view.clear_all_messages()
         self.controller.display_message("Connecting...")
         self.view.process_events()
         try:
