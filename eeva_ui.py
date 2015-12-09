@@ -7,6 +7,7 @@ from connection_controller import ConnectionController
 from glob_link import GlobLink
 from version import current_gui_version
 from PyQt4 import QtGui
+from exception_hook import excepthook
 
 if __name__ == '__main__':
 
@@ -21,6 +22,9 @@ if __name__ == '__main__':
         myappid = u'ner.eeva.ui.1'
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
     
+    # Tell system to call our custom function when an unhandled exception occurs
+    sys.excepthook = excepthook
+    
     # Configure system
     link = GlobLink()
     controller = EevaController(link)
@@ -34,3 +38,4 @@ if __name__ == '__main__':
     window.show()
 
     sys.exit(app.exec_())
+    
