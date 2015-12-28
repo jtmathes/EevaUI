@@ -59,7 +59,7 @@ class StatusData(Glob):
     id = GlobID.StatusData
     
     # Struct format for packing/unpacking. Little-endian no padding.
-    data_format = '<' + ('f' * 4) + ('B' * 4) + ('f' * 14) + 'i'
+    data_format = '<' + ('f' * 4) + ('B' * 4) + ('f' * 14) + 'i' + ('B' * 12)
     
     def __init__(self, instance=1):
         '''Constructor'''
@@ -96,6 +96,8 @@ class StatusData(Glob):
         self.data["left_power"] = abs(self.data["left_voltage"] * self.data["left_current"])
         self.data["right_power"] = abs(self.data["right_voltage"] * self.data["right_current"])
         self.data["firmware_version"] = values[22]
+        robot_id_bytes = values[23:35]
+        self.data["robot_id"] = ''.join('{:02X}'.format(b) for b in robot_id_bytes)
             
 class CaptureCommand(Glob):
     

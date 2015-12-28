@@ -51,6 +51,7 @@ class ConnectionController(object):
             self.view.set_connect_button_text('Disconnect')
             # make sure flag is reset so GUI verifies firmware version
             self.controller.verified_firmware_version = False
+            self.controller.verified_robot_id = False
             
     def disconnect_from_port(self):
         
@@ -83,15 +84,15 @@ class ConnectionController(object):
             self.last_bytes_tx = bytes_tx
             self.last_bytes_rx = bytes_rx
             
-            self.check_for_lost_connection(bytes_rx, bps_rx)
+            self.check_for_lost_connection(self.link.num_messages_received, bps_rx)
             
         finally:
             # Constantly reschedule timer to avoid overlapping calls
             QTimer.singleShot(LINK_STATS_TIMER_INTERVAL * 1000, self.link_timer_elapsed)
         
-    def check_for_lost_connection(self, bytes_rx, bps_rx):
+    def check_for_lost_connection(self, num_messages_received, bps_rx):
         
-        if self.link.connection_open() and bytes_rx > 0:
+        if self.link.connection_open() and num_messages_received > 0:
             
             if bps_rx == 0:
                 self.num_times_no_bytes_received += 1

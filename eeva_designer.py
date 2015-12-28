@@ -171,6 +171,7 @@ class Ui_MainWindow(object):
         self.layoutWidget = QtGui.QWidget(self.mainSplitter)
         self.layoutWidget.setObjectName(_fromUtf8("layoutWidget"))
         self.mainHorizontalLayout = QtGui.QHBoxLayout(self.layoutWidget)
+        self.mainHorizontalLayout.setSizeConstraint(QtGui.QLayout.SetDefaultConstraint)
         self.mainHorizontalLayout.setObjectName(_fromUtf8("mainHorizontalLayout"))
         self.verticalLayout2 = QtGui.QVBoxLayout()
         self.verticalLayout2.setObjectName(_fromUtf8("verticalLayout2"))

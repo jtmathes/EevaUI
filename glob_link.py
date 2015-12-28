@@ -167,7 +167,7 @@ class GlobLink(object):
             # Ask old parser to stop before we create another one for the new connection.
             self.parser.stop_request.set()
             
-        self.connection = SerialConnection(port=port_name, timeout=0.2)
+        self.connection = SerialConnection(port=port_name, timeout=0.2, baudrate=115200)
         
         connection_thread = threading.Thread(target=self.connection.run)
         connection_thread.setDaemon(True)

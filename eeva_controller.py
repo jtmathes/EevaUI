@@ -1,6 +1,8 @@
 import os
 import sys
 import time
+import csv
+import datetime
 from glob import *
 from eeva_io import *
 from validate_params import *
@@ -23,7 +25,8 @@ class EevaController:
         home_directory = os.path.expanduser('~')
         
         # Create timestamped directory for current run.
-        self.session_directory = os.path.join(home_directory, 'eeva-output/', time.strftime("output-%Y-%m-%d-%H-%M-%S/"))
+        self.output_directory = os.path.join(home_directory, 'eeva-output')
+        self.session_directory = os.path.join(self.output_directory, time.strftime("output-%Y-%m-%d-%H-%M-%S/"))
         if not os.path.exists(self.session_directory):
             os.makedirs(self.session_directory)
         
@@ -42,6 +45,9 @@ class EevaController:
         # Set to true once robot's firmware version has been checked for compatibility issues with GUI.
         # Should be reset after each connection to the robot.
         self.verified_firmware_version = False
+        
+        # Set to true once robot ID has been checked. Should be reset after each connection to robot.
+        self.verified_robot_id = False
         
         # What different message sources show as which color.
         self.source_display_colors = {'ui':'black', 'robot':'blue', 'assert':'red'}
@@ -109,6 +115,24 @@ class EevaController:
             self.display_message(str(list_compatible_gui_versions(firmware_version)))
         
         self.verified_firmware_version = True
+        
+    def verify_robot_id(self, robot_id):
+
+        self.display_message("ID: {}".format(robot_id))
+        
+        try:
+            id_filepath = os.path.join(self.output_directory, 'eeva_ids.csv')
+            with open(id_filepath, 'ab+') as id_file:
+                csv_reader = csv.reader(id_file, delimiter=",")
+                stored_ids = [row[0].strip() for row in csv_reader]
+                if robot_id not in stored_ids:
+                    csv_writer = csv.writer(id_file)
+                    now = datetime.datetime.now()
+                    csv_writer.writerow([robot_id, now.strftime("%Y-%m-%d %H:%M:%S")])
+        except:
+            self.display_message("Error when storing ID.")
+        
+        self.verified_robot_id = True
         
     def send_robot_command(self, cmd_type):
         
@@ -212,6 +236,9 @@ class EevaController:
             
             if not self.verified_firmware_version:
                 self.verify_firmware_version(msg.data['firmware_version'])
+                
+            if not self.verified_robot_id:
+                self.verify_robot_id(msg.data['robot_id'])
             
         elif id == GlobID.CaptureData:
             
