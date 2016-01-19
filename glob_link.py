@@ -59,13 +59,13 @@ class ParserThread(threading.Thread):
                     self.data_idx += 1
                     self.advance_parse()
                     
-            elif self.parse_state >= 0 and self.parse_state <= 3:
-                # Pull out id and both bytes of instance and packet number.
+            elif self.parse_state >= 0 and self.parse_state <= 4:
+                # Pull out CRC valid flag, glob id and both bytes of instance and packet number.
                 self.message_data[self.data_idx] = byte
                 self.data_idx += 1
                 self.advance_parse()
                 
-            elif self.parse_state == 4:
+            elif self.parse_state == 5:
                 self.message_data[self.data_idx] = byte
                 self.data_idx += 1
                 self.num_body_bytes = byte
@@ -74,18 +74,18 @@ class ParserThread(threading.Thread):
                 if self.num_body_bytes == 0:
                     self.advance_parse() # go straight to checksum
                 
-            elif self.parse_state == 5:
+            elif self.parse_state == 6:
                 self.message_data[self.data_idx] = byte
                 self.data_idx += 1
                 if self.data_idx - self.body_start_idx >= self.num_body_bytes:
                     self.body_end_idx = self.data_idx
                     self.advance_parse()
                     
-            elif self.parse_state == 6:
+            elif self.parse_state == 7:
                 self.expected_crc1 = byte
                 self.advance_parse()
                 
-            elif self.parse_state == 7:
+            elif self.parse_state == 8:
                 self.expected_crc2 = byte
                 message_pending = True
                 
@@ -94,7 +94,10 @@ class ParserThread(threading.Thread):
                 
             if message_pending:
                 message_pending = False
-                if self.verify_crc():
+                
+                crc_should_be_valid = (self.message_data[1] != 0)
+                
+                if not crc_should_be_valid or self.verify_crc():
                     self.handle_new_message()
                 
                 self.reset_parse()
@@ -122,12 +125,16 @@ class ParserThread(threading.Thread):
 
         self.num_messages_received += 1
         
-        id = self.message_data[1]
-        instance1 = self.message_data[2]
-        instance2 = self.message_data[3]
+        packet_num_should_be_valid = (self.message_data[1] != 0)
+        id = self.message_data[2]
+        instance1 = self.message_data[3]
+        instance2 = self.message_data[4]
         instance = instance1 + (instance2 << 8)
-        packet_num = self.message_data[4]
+        packet_num = self.message_data[5]
         body = self.message_data[self.body_start_idx : self.body_end_idx]
+        
+        if not packet_num_should_be_valid:
+            packet_num = self.last_rx_packet_num + 1
         
         self.new_message_callback(id, instance, body)
         
@@ -206,9 +213,10 @@ class GlobLink(object):
         body_bytes = glob.pack()
         body_size = len(body_bytes)
         
-        header_fmt = '<BBHBB'
-        header = (self.message_start_byte, glob.id, glob.instance, self.next_packet_num, body_size)
-        header_size = 6
+        # Send a 1 at start of header to show that CRC and packet number should be valid.
+        header_fmt = '<BBBHBB'
+        header = (self.message_start_byte, 1, glob.id, glob.instance, self.next_packet_num, body_size)
+        header_size = 7
         
         struct.pack_into(header_fmt, self.transfer_buffer, 0, *header)
         

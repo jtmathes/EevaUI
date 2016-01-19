@@ -1,9 +1,10 @@
 
-current_gui_version = 1
+current_gui_version = 2
 
 # compatible versions of GUI (keys) and robot firmwares (values)
 compatible_versions = {
     1 : [1],
+    2 : [2],
     }
 
 # Return list of GUI versions that are compatible for a given firmware version
