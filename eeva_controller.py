@@ -21,15 +21,6 @@ class EevaController:
         
         self.driving_mode_enabled = False
         
-        # Use home directory for root output directory. This is platform independent and works well with an installed package.
-        home_directory = os.path.expanduser('~')
-        
-        # Create timestamped directory for current run.
-        self.output_directory = os.path.join(home_directory, 'eeva-output')
-        self.session_directory = os.path.join(self.output_directory, time.strftime("output-%Y-%m-%d-%H-%M-%S/"))
-        if not os.path.exists(self.session_directory):
-            os.makedirs(self.session_directory)
-        
         # list of actively received capture data (cleared after writing to file)
         self.capture_data = []
         
@@ -61,6 +52,12 @@ class EevaController:
     def initialize_view(self, view):
         
         self.display_message('GUI version: {}'.format(current_gui_version))
+        
+        # Create timestamped directory for current run.
+        self.output_directory = os.path.join(view.saved_base_directory, 'eeva_output')
+        self.session_directory = os.path.join(self.output_directory, time.strftime("output_%Y-%m-%d_%H-%M-%S/"))
+        if not os.path.exists(self.session_directory):
+            os.makedirs(self.session_directory)
         
         self.request_new_port_list()
         

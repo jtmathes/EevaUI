@@ -33,9 +33,9 @@ def write_to_matlab_script_file(filepath, column_names, data):
 
 def open_output_directory_in_viewer(out_directory, controller=None):
     
-    if sys.platform=='win32':
+    if sys.platform == 'win32':
         os.startfile(out_directory)
-    elif sys.platform=='darwin':
+    elif sys.platform == 'darwin':
         subprocess.Popen(['open', out_directory])
     else:
         try:

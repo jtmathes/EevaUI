@@ -1,5 +1,6 @@
 
 import threading
+import os
 
 # Use default python types instead of QVariant
 import sip
@@ -7,7 +8,7 @@ sip.setapi('QVariant', 2)
 
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import QMetaObject, QObject, QEvent, Qt, Q_ARG
-from PyQt4.QtGui import QMainWindow, QColor
+from PyQt4.QtGui import QMainWindow, QColor, QFileDialog
 from eeva_designer import Ui_MainWindow
 from glob import DrivingCommand, RobotCommand, Modes, Wave, PidParams
 from validate_params import *
@@ -32,6 +33,7 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         self.collectDataButton.clicked.connect(self.collect_data_button_clicked)
         self.startAndCollectButton.clicked.connect(self.start_and_collect_data_button_clicked)
         self.openOutputDirectoryButton.clicked.connect(self.open_output_directory_clicked)
+        self.changeOutputDirectoryButton.clicked.connect(self.change_output_directory_clicked)
         
         # Mode radio buttons
         self.balanceRadioButton.clicked.connect(self.balance_mode_selected)
@@ -96,6 +98,18 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
     def process_events(self):
         self.app.processEvents()
         
+    @property
+    def saved_base_directory(self):
+        base_directory = self.settings.value("base_directory")
+        if base_directory is None:
+            base_directory = os.path.expanduser('~')
+            self.saved_base_directory = base_directory
+        return str(base_directory)
+        
+    @saved_base_directory.setter
+    def saved_base_directory(self, new_value):
+        self.settings.setValue("base_directory", new_value)
+        
     def get_driving_command_states(self):
         return self.key_press_filter.command_state
 
@@ -123,6 +137,15 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         
     def open_output_directory_clicked(self):
         self.controller.open_output_directory()
+        
+    def change_output_directory_clicked(self):
+        folder_path = str(QFileDialog.getExistingDirectory(self, "Select Base Directory", directory=self.saved_base_directory))
+        if folder_path:
+            self.saved_base_directory = folder_path
+            popup = QtGui.QMessageBox()
+            popup.setText("Base directory changed to\n{}\n\nThis will take effect next time program is started.".format(folder_path))
+            popup.setWindowTitle('Directory Changed')
+            popup.exec_()
         
     # Robot modes
     def balance_mode_selected(self):

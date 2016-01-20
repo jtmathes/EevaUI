@@ -22,6 +22,9 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_4">
+    <property name="topMargin">
+     <number>2</number>
+    </property>
     <item row="0" column="0">
      <widget class="QSplitter" name="mainSplitter">
       <property name="sizePolicy">
@@ -400,7 +403,14 @@
              <item>
               <widget class="QPushButton" name="openOutputDirectoryButton">
                <property name="text">
-                <string>Open Output Directory</string>
+                <string>Open Directory</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="changeOutputDirectoryButton">
+               <property name="text">
+                <string>Change Directory</string>
                </property>
               </widget>
              </item>
@@ -1871,6 +1881,11 @@
    </property>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionChange_Output_Directory">
+   <property name="text">
+    <string>Change Output Directory</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

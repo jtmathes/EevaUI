@@ -35,7 +35,7 @@ if __name__ == '__main__':
     connection_controller.start_link_timer()
     
     window.setWindowTitle('EevaUI - v{}'.format(current_gui_version))
-    window.setFixedHeight(window.sizeHint().height());
+    window.setFixedHeight(window.sizeHint().height())
     window.show()
 
     sys.exit(app.exec_())
