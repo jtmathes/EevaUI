@@ -341,7 +341,7 @@ class EevaController:
         csv_filename = filename + ".csv"
         csv_filepath = os.path.join(self.session_directory, csv_filename)
 
-        matlab_filename = filename + ".mat"
+        matlab_filename = filename + ".m"
         matlab_filepath = os.path.join(self.session_directory, matlab_filename)
 
         column_names = ('time', 'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8')
@@ -349,7 +349,7 @@ class EevaController:
         try:
             write_to_csv(csv_filepath, column_names, self.capture_data)
             self.display_message('Created {}'.format(csv_filename))
-            write_to_matlab_data_file(matlab_filepath, column_names, self.capture_data)
+            write_to_matlab_script_file(matlab_filepath, column_names, self.capture_data)
             self.display_message('Created {}'.format(matlab_filename))
         except IOError:
             self.display_message('IO Error. Filename {} is most likely invalid.'.format(csv_filename))

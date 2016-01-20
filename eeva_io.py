@@ -3,9 +3,6 @@ import sys
 import os
 import csv
 import subprocess
-
-import numpy as np
-import scipy.io
         
 def write_to_csv(filepath, column_names, data):
     
@@ -14,11 +11,21 @@ def write_to_csv(filepath, column_names, data):
         writer.writerow(column_names)
         writer.writerows(data) 
         
+'''
 def write_to_matlab_data_file(filepath, column_names, data):
-    data = np.array(data)
-    scipy.io.savemat(filepath, mdict={'d': data})
+    
+    try:
+        import scipy.io
+        import numpy as np
+        data = np.array(data)
+        scipy.io.savemat(filepath, mdict={'d': data})
+        return True
+    except ImportError:
+        return False
+'''
         
 def write_to_matlab_script_file(filepath, column_names, data):
+    
     with open(filepath, 'w') as outfile:
         outfile.write('% {}\n'.format(" ".join(column_names)))
         outfile.write('d = ...\n')
