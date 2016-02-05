@@ -8,12 +8,13 @@ from glob_link import GlobLink
 from version import current_gui_version
 from PyQt4 import QtGui
 from exception_hook import excepthook
+import images_qr
 
 if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
     app.setStyle('plastique')
-    app.setWindowIcon(QtGui.QIcon('./resources/NERLogoTransparent.png'))
+    app.setWindowIcon(QtGui.QIcon(':/resources/NERLogoTransparent.png'))
     
     if os.name == 'nt':
         # If running on windows then need to unassociate process from python so that

@@ -20,6 +20,10 @@
   <property name="windowTitle">
    <string>EevaUI</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="resources/images.qrc">
+    <normaloff>:/Images/NERLogoTransparent.png</normaloff>:/Images/NERLogoTransparent.png</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_4">
     <property name="topMargin">
@@ -1887,6 +1891,8 @@
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="resources/images.qrc"/>
+ </resources>
  <connections/>
 </ui>

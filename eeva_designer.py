@@ -31,6 +31,9 @@ class Ui_MainWindow(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(MainWindow.sizePolicy().hasHeightForWidth())
         MainWindow.setSizePolicy(sizePolicy)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/Images/NERLogoTransparent.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        MainWindow.setWindowIcon(icon)
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName(_fromUtf8("centralwidget"))
         self.gridLayout_4 = QtGui.QGridLayout(self.centralwidget)
@@ -1079,4 +1082,3 @@ class Ui_MainWindow(object):
         self.label_25.setText(_translate("MainWindow", "Mode", None))
         self.label_49.setText(_translate("MainWindow", "---", None))
         self.actionChange_Output_Directory.setText(_translate("MainWindow", "Change Output Directory", None))
-

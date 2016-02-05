@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="Images/">
+    <file>NERLogoTransparent.png</file>
+  </qresource>
+</RCC>
