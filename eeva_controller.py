@@ -275,9 +275,17 @@ class EevaController:
 
             self.pid_params[instance-1] = msg
             
-            # Received last instance so update view for whichever controller is showing.
+            # Update view for whichever controller is showing.
+            self.show_current_pid_params()
+            
+            # If all parameters were being sent back make sure they all got here.
             if instance == PidParams.num_controllers:
-                self.show_current_pid_params()
+                for k, pid_params in enumerate(self.pid_params):
+                    if not pid_params.received:
+                        #self.display_message("Failed to receive parameters for {}".format(PidParams.controllers[k]))
+                        #self.display_message("Requesting PID parameters again.")
+                        self.request_controller_gains_from_robot()
+                        break
             
     def show_current_pid_params(self):
         

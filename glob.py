@@ -203,7 +203,8 @@ class Modes(Glob):
     # Experiment sub IDs. Text labels so can show on form.
     experiments = {0 : "None",
                    1 : "Motor Speed Control",
-                   2 : "Motor Current Control"}
+                   2 : "Motor Current Control",
+                   3 : "Motor Position Control"}
     
     # Struct format for packing/unpacking. Little-endian no padding.
     data_format = '<BBB'
@@ -302,7 +303,9 @@ class PidParams(Glob):
                    4 : "Right Motor Current",
                    5 : "Balance Tilt",
                    6 : "Balance Position",
-                   7 : "Line Following"}
+                   7 : "Line Following",
+                   8 : "Left Wheel Position",
+                   9 : "Right Wheel Position"}
     
     num_controllers = len(controllers)
     
@@ -320,6 +323,9 @@ class PidParams(Glob):
         self.integral_hilimit = kargs.get('int_sat_limit', 0)
         self.lolimit = -kargs.get('sat_limit', 0)
         self.hilimit = kargs.get('sat_limit', 0)
+        
+        # Not part of actual glob.  Used so GUI can keep track which ones have been received.
+        self.received = False
 
     def pack(self):
         
@@ -337,6 +343,9 @@ class PidParams(Glob):
         self.integral_hilimit = values[4]
         self.lolimit = values[5]
         self.hilimit = values[6]
+        
+        # Mark that glob is now valid.
+        self.received = True
         
 class Request(Glob):
     
