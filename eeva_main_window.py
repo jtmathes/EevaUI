@@ -159,8 +159,19 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
     def custom_mode_selected(self):
         self.controller.change_robot_mode(Modes.custom)     
     
-    def select_balance_mode(self):
-        self.balanceRadioButton.setChecked(True)
+    def select_robot_mode(self, mode, submode):
+        if mode == Modes.balance:
+            self.balanceRadioButton.setChecked(True)
+        elif mode == Modes.horizontal:
+            self.horizontalRadioButton.setChecked(True)
+        elif mode == Modes.line_follow:
+            self.followLineRadioButton.setChecked(True)
+        elif mode == Modes.experiment:
+            self.experimentRadioButton.setChecked(True)
+            self.set_experiment_list_visibility(True)
+            self.select_experiment_mode(submode)
+        elif mode == Modes.custom:
+            self.customRadioButton.setChecked(True)
         
     def set_experiment_list_visibility(self, make_visible):
         self.experimentComboBox.setEnabled(make_visible)
@@ -175,6 +186,12 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         
         experiment_idx = int(self.experimentComboBox.currentIndex())
         self.controller.change_experiment(experiment_idx)
+    
+    def select_experiment_mode(self, mode):
+        try:
+            self.experimentComboBox.setCurrentIndex(mode)
+        except:
+            pass
     
     def connect_button_clicked(self):
         

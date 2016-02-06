@@ -52,6 +52,7 @@ class ConnectionController(object):
             # make sure flag is reset so GUI verifies firmware version
             self.controller.verified_firmware_version = False
             self.controller.verified_robot_id = False
+            self.controller.verified_robot_mode = False
             
     def disconnect_from_port(self):
         

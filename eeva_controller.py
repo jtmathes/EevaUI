@@ -40,6 +40,9 @@ class EevaController:
         # Set to true once robot ID has been checked. Should be reset after each connection to robot.
         self.verified_robot_id = False
         
+        # Set to true once GUI has gotten in sync with the robot's current mode.
+        self.verified_robot_mode = False
+        
         # What different message sources show as which color.
         self.source_display_colors = {'ui':'black', 'robot':'blue', 'assert':'red'}
 
@@ -61,7 +64,7 @@ class EevaController:
         
         self.request_new_port_list()
         
-        self.view.select_balance_mode()
+        self.view.select_robot_mode(Modes.balance, 0)
         
         self.view.set_data_capture_filename('data')
         self.view.set_generate_filename(False)
@@ -130,6 +133,12 @@ class EevaController:
             self.display_message("Error when storing ID.")
         
         self.verified_robot_id = True
+        
+    def verify_robot_mode(self, msg):
+
+        self.view.select_robot_mode(msg['main_mode'], msg['sub_mode'])
+        
+        self.verified_robot_mode = True
         
     def send_robot_command(self, cmd_type):
         
@@ -236,6 +245,9 @@ class EevaController:
                 
             if not self.verified_robot_id:
                 self.verify_robot_id(msg.data['robot_id'])
+                
+            if not self.verified_robot_mode:
+                self.verify_robot_mode(msg.data)
             
         elif id == GlobID.CaptureData:
             
