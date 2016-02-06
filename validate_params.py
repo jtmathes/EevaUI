@@ -1,5 +1,5 @@
 
-from glob import PidParams
+from glob import PidParams, Request
 
 # Data capture parameters
 DEFAULT_NUM_SAMPLES = 300
@@ -90,9 +90,11 @@ def validate_pid_parameters(controller, send=False):
     params.instance = pid_idx + 1;
     
     if send:
-        # Save before sending so we don't need to request new value.
+        # Save before sending so we can keep what we have stored in sync with what user is seeing.
         controller.pid_params[pid_idx] = params
         controller.link.send(params)
+        # Request new gains just to verify that robot got new gains.
+        controller.link.send(Request(PidParams.id, instance=params.instance))
     
 def validate_manual_command_parameters(view):
     
