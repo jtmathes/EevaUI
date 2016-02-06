@@ -202,9 +202,9 @@ class Modes(Glob):
     
     # Experiment sub IDs. Text labels so can show on form.
     experiments = {0 : "None",
-                   1 : "Motor Speed Control",
-                   2 : "Motor Current Control",
-                   3 : "Motor Position Control"}
+                   1 : "Wheel Linear Speed",
+                   2 : "Motor Current",
+                   3 : "Wheel Angular Position"}
     
     # Struct format for packing/unpacking. Little-endian no padding.
     data_format = '<BBB'
@@ -296,16 +296,16 @@ class PidParams(Glob):
     id = GlobID.PidParams
     
     # Controller IDs. Text labels so can show on form.
-    controllers = {0 : "Left Wheel Speed",
-                   1 : "Right Wheel Speed",
-                   2 : "Yaw",
-                   3 : "Left Motor Current",
-                   4 : "Right Motor Current",
-                   5 : "Balance Tilt",
-                   6 : "Balance Position",
-                   7 : "Line Following",
-                   8 : "Left Wheel Position",
-                   9 : "Right Wheel Position"}
+    controllers = {0 : "Left Wheel Speed (m/s)",
+                   1 : "Right Wheel Speed (m/s)",
+                   2 : "Yaw (radians)",
+                   3 : "Left Motor Current (amps)",
+                   4 : "Right Motor Current (amps)",
+                   5 : "Balance Tilt (radians)",
+                   6 : "Balance Position (meters)",
+                   7 : "Line Following (meters)",
+                   8 : "Left Wheel Position (deg)",
+                   9 : "Right Wheel Position (deg)"}
     
     num_controllers = len(controllers)
     
