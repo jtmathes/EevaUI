@@ -114,8 +114,12 @@ class EevaController:
             self.display_message("Warning: Eeva version {} not compatible with GUI version {}.".format(firmware_version, current_gui_version))
             self.display_message("List of compatible Eeva versions is:")
             self.display_message(str(compatible_firmware_versions))
-            self.display_message("List of GUI versions that are compatible with Eeva version is:")
-            self.display_message(str(list_compatible_gui_versions(firmware_version)))
+            compatible_gui_versions = list_compatible_gui_versions(firmware_version)
+            if len(compatible_gui_versions) > 0:
+                self.display_message("List of GUI versions that are compatible with Eeva version is:")
+                self.display_message(str(compatible_gui_versions))
+            else:
+                self.display_message("Eeva version is newer than GUI.  Please upgrade to newest version of GUI.")
         
         self.verified_firmware_version = True
         
