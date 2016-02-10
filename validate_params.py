@@ -86,12 +86,14 @@ def validate_pid_parameters(controller, send=False):
 
     view.set_pid_parameters(params)
     
-    pid_idx = view.get_controller_index()
-    params.instance = pid_idx + 1;
+    pid_number = view.get_controller_index()
+    # Look up PID id associated with the controller that's currently selected
+    pid_id = PidParams.controllers[pid_number][0]
+    params.instance = pid_id + 1;
     
     if send:
         # Save before sending so we can keep what we have stored in sync with what user is seeing.
-        controller.pid_params[pid_idx] = params
+        controller.pid_params[pid_number] = params
         controller.link.send(params)
         # Request new gains just to verify that robot got new gains.
         controller.link.send(Request(PidParams.id, instance=params.instance))

@@ -32,7 +32,7 @@ class ConnectionController(object):
         self.controller.display_message("Connecting...")
         self.view.process_events() # immediately show message in case GUI locks up for a little bit
         try:
-            self.link.connect(port_name, self.controller.new_message_callback)
+            self.link.connect(port_name)
             self.link_connected = True
             self.view.save_default_port(port_name)
             
@@ -52,7 +52,6 @@ class ConnectionController(object):
             # make sure flag is reset so GUI verifies firmware version
             self.controller.verified_firmware_version = False
             self.controller.verified_robot_id = False
-            self.controller.verified_robot_mode = False
             
     def disconnect_from_port(self):
         

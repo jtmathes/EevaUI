@@ -5,6 +5,7 @@ import threading
 import Queue
 from crc import calculate_crc
 from serial_extension import SerialConnection
+from PyQt4.QtCore import QObject, pyqtSignal
 
 class ParserThread(threading.Thread):
 
@@ -136,7 +137,8 @@ class ParserThread(threading.Thread):
         if not packet_num_should_be_valid:
             packet_num = self.last_rx_packet_num + 1
         
-        self.new_message_callback(id, instance, body)
+        #self.new_message_callback(id, instance, body)
+        self.new_message_callback.emit(id, instance, body)
         
         if self.num_messages_received > 1:
             # Check for dropped packet's
@@ -146,9 +148,13 @@ class ParserThread(threading.Thread):
         
         self.last_rx_packet_num = packet_num
 
-class GlobLink(object):
+class GlobLink(QObject):
+    
+    new_message = pyqtSignal(int, int, bytearray)
     
     def __init__(self):
+        
+        super(GlobLink, self).__init__()
         
         # Port to receive and transmit bytes over.
         self.connection = None
@@ -165,7 +171,7 @@ class GlobLink(object):
         self.transfer_buffer = bytearray(300)
         self.next_packet_num = 0 # used to detect dropped packets
         
-    def connect(self, port_name, new_message_callback):
+    def connect(self, port_name):
         
         if self.connection_open():
             raise IOError('Connection still open.')
@@ -180,7 +186,7 @@ class GlobLink(object):
         connection_thread.setDaemon(True)
         connection_thread.start()
         
-        self.parser = ParserThread(self.connection, self.message_start_byte, new_message_callback)
+        self.parser = ParserThread(self.connection, self.message_start_byte, self.new_message)
         self.parser.setDaemon(True)
         self.parser.start()
         

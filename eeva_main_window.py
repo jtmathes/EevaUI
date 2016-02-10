@@ -168,10 +168,11 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
             self.followLineRadioButton.setChecked(True)
         elif mode == Modes.experiment:
             self.experimentRadioButton.setChecked(True)
-            self.set_experiment_list_visibility(True)
             self.select_experiment_mode(submode)
         elif mode == Modes.custom:
             self.customRadioButton.setChecked(True)
+            
+        self.set_experiment_list_visibility(mode == Modes.experiment)
         
     def set_experiment_list_visibility(self, make_visible):
         self.experimentComboBox.setEnabled(make_visible)

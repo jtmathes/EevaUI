@@ -19,6 +19,9 @@ class EevaController:
         self.link = link
         self.view = None
         
+        # Hookup to our slot so can run new message callback from main thread.
+        self.link.new_message.connect(self.new_message_callback)
+        
         self.driving_mode_enabled = False
         
         # list of actively received capture data (cleared after writing to file)
@@ -40,8 +43,8 @@ class EevaController:
         # Set to true once robot ID has been checked. Should be reset after each connection to robot.
         self.verified_robot_id = False
         
-        # Set to true once GUI has gotten in sync with the robot's current mode.
-        self.verified_robot_mode = False
+        # Last time the user changed the mode from the GUI.
+        self.last_mode_change_time = 0
         
         # What different message sources show as which color.
         self.source_display_colors = {'ui':'black', 'robot':'blue', 'assert':'red'}
@@ -76,10 +79,10 @@ class EevaController:
         validate_manual_command_parameters(view)
         validate_pid_parameters(self, send=False)
         
-        self.view.set_experiment_list([Modes.experiments[k] for k in sorted(Modes.experiments.iterkeys())])
+        self.view.set_experiment_list([experiment[1] for experiment in Modes.experiments])
         self.view.set_experiment_list_visibility(False)
         
-        self.view.set_controller_list([PidParams.controllers[k] for k in sorted(PidParams.controllers.iterkeys())])
+        self.view.set_controller_list([controller[1] for controller in PidParams.controllers])
         
         self.view.restore_default_port()
         
@@ -136,9 +139,16 @@ class EevaController:
         
     def verify_robot_mode(self, msg):
 
-        self.view.select_robot_mode(msg['main_mode'], msg['sub_mode'])
+        # Don't sync to robot mode if we've tried to change mode recently or it will
+        # switch back and forth really fast.
+        if self.time_since_last_mode_change() > 1:
+            self.view.select_robot_mode(msg['main_mode'], msg['sub_mode'])
+            self.last_main_mode = msg['main_mode']
+            self.last_sub_mode = msg['sub_mode']
         
-        self.verified_robot_mode = True
+    def time_since_last_mode_change(self):
+        
+        return time.time() - self.last_mode_change_time
         
     def send_robot_command(self, cmd_type):
         
@@ -160,11 +170,17 @@ class EevaController:
         
         self.view.set_experiment_list_visibility(mode == Modes.experiment)
         
-    def change_experiment(self, experiment_id):
+        self.last_mode_change_time = time.time()
+        
+    def change_experiment(self, experiment_number):
+        
+        experiment_id = Modes.experiments[experiment_number][0]
         
         cmd = Modes(main_mode=self.last_main_mode, sub_mode = experiment_id)
         self.link.send(cmd)
         self.last_sub_mode = experiment_id
+        
+        self.last_mode_change_time = time.time()
         
     def send_wave(self):
         
@@ -246,8 +262,7 @@ class EevaController:
             if not self.verified_robot_id:
                 self.verify_robot_id(msg.data['robot_id'])
                 
-            if not self.verified_robot_mode:
-                self.verify_robot_mode(msg.data)
+            self.verify_robot_mode(msg.data)
             
         elif id == GlobID.CaptureData:
             
@@ -283,9 +298,15 @@ class EevaController:
             
         elif id == GlobID.PidParams:
             
+            controller_id = instance - 1
+            
+            if instance > len(self.pid_params):
+                self.display_message("Received params for unknown controller with ID {}".format(controller_id))
+                return
+            
             msg = PidParams.from_bytes(body, instance)
 
-            self.pid_params[instance-1] = msg
+            self.pid_params[controller_id] = msg
             
             # Update view for whichever controller is showing.
             self.show_current_pid_params()
@@ -298,6 +319,9 @@ class EevaController:
                         #self.display_message("Requesting PID parameters again.")
                         self.request_controller_gains_from_robot()
                         break
+                    
+        else:
+            self.display_message("Received unhandled glob with ID {}".format(id))
             
     def show_current_pid_params(self):
         
