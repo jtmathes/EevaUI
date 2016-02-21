@@ -116,6 +116,10 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
     def start_button_clicked(self):
         self.controller.send_robot_command(RobotCommand.start)
         
+        modifiers = QtGui.QApplication.keyboardModifiers()
+        if modifiers == (QtCore.Qt.ControlModifier | QtCore.Qt.ShiftModifier):
+            self.controller.send_robot_command(RobotCommand.task_timing)
+        
     def stop_button_clicked(self):
         self.controller.send_robot_command(RobotCommand.stop)
         

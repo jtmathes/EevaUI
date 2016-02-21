@@ -24,8 +24,11 @@ class EevaController:
         
         self.driving_mode_enabled = False
         
-        # list of actively received capture data (cleared after writing to file)
+        # List of actively received capture data (cleared after writing to file)
         self.capture_data = []
+        
+        # List of messages that store information about robot task timing.
+        self.task_timing_results = []
         
         self.capturing_data = False
         
@@ -324,6 +327,16 @@ class EevaController:
                         self.request_controller_gains_from_robot()
                         break
                     
+        elif id == GlobID.TaskTimingResult:
+            
+            msg = TaskTimingResult.from_bytes(body, instance)
+
+            if msg.task_name[:4].lower() == "done":
+                self.write_task_timing_results_to_file()
+                self.task_timing_results = []
+            else:
+                self.task_timing_results.append(msg)
+
         else:
             self.display_message("Received unhandled glob with ID {}".format(id))
             
@@ -398,6 +411,36 @@ class EevaController:
             self.display_message('Created {}'.format(matlab_filename))
         except IOError:
             self.display_message('IO Error. Filename {} is most likely invalid.'.format(csv_filename))
+            
+    def write_task_timing_results_to_file(self):
+        
+        if len(self.task_timing_results) == 0:
+            return
+            
+        filename = make_filename_unique(self.session_directory, "task_timing")
+        filepath = os.path.join(self.session_directory, filename + ".csv")
+        
+        column_names = ('Task', 'Duration', 'Counts', 'Skip', 'Delay Max', 'Delay Min', 'Delay Avg', 'Run Max',
+                         'Run Min', 'Run Avg', 'Intv. Max', 'Intv. Min', 'Intv. Avg', 'Total (s)', '%')
+        
+        try:
+            with open(filepath, 'wb') as outfile:
+                writer = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                writer.writerow(column_names)
+                for r in self.task_timing_results:
+                    
+                    total_run_time = r.run_usec_avg * r.execute_counts / 1e6 # seconds
+                    percentage_run_time = total_run_time * 100 / r.recording_duration
+                    
+                    result_list = [r.task_name, r.recording_duration, r.execute_counts, r.times_skipped, 
+                                   r.delay_usec_max, r.delay_usec_min, r.delay_usec_avg,
+                                   r.run_usec_max, r.run_usec_min, r.run_usec_avg,
+                                   r.interval_usec_max, r.interval_usec_min, r.interval_usec_avg,
+                                   total_run_time, percentage_run_time] 
+                    writer.writerow(result_list) 
+            self.display_message('Created {}'.format(filepath))
+        except IOError:
+            self.display_message('IO Error. Filename {} is most likely invalid.'.format(filename))
 
     def open_output_directory(self):
         open_output_directory_in_viewer(self.session_directory, self)

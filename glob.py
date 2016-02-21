@@ -15,6 +15,7 @@ class GlobID:
     Wave = 19
     PidParams = 20
     Request = 21
+    TaskTimingResult = 22
 
 class Glob(object):
     
@@ -228,6 +229,7 @@ class RobotCommand(Glob):
     start = 0
     stop = 1
     reset = 2
+    task_timing = 3
     
     # Struct format for packing/unpacking. Little-endian no padding.
     data_format = '<B'
@@ -363,3 +365,41 @@ class Request(Glob):
     def pack(self):
 
         return struct.pack(Request.data_format, self.requested_id)
+
+class TaskTimingResult(Glob):
+    
+    # Unique class ID
+    id = GlobID.TaskTimingResult
+    
+    # Struct format for packing/unpacking. Little-endian no padding.
+    data_format = '<32sIfII' + (9 * 'I')
+    
+    def __init__(self, instance=1):
+        '''Constructor'''
+        self.instance = instance
+
+    def unpack(self, data_bytes):
+        
+        values = struct.unpack(TaskTimingResult.data_format, data_bytes)
+        
+        self.task_name = values[0]
+        
+        self.timer_frequency = values[1]
+        
+        ticks2usec = 1.0e6 / self.timer_frequency
+        
+        self.recording_duration = values[2]
+        self.execute_counts = values[3] 
+        self.times_skipped = values[4]
+
+        self.delay_usec_max = values[5] * ticks2usec
+        self.delay_usec_min = values[6] * ticks2usec
+        self.delay_usec_avg = values[7] * ticks2usec
+        
+        self.run_usec_max = values[8] * ticks2usec
+        self.run_usec_min = values[9] * ticks2usec
+        self.run_usec_avg = values[10] * ticks2usec
+        
+        self.interval_usec_max = values[11] * ticks2usec
+        self.interval_usec_min = values[12] * ticks2usec
+        self.interval_usec_avg = values[13] * ticks2usec

@@ -5,7 +5,7 @@ current_gui_version = 3
 compatible_versions = {
     1 : [1],
     2 : [2],
-    3 : [3]
+    3 : [3, 4]
     }
 
 # Return list of GUI versions that are compatible for a given firmware version
