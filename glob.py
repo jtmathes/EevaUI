@@ -159,6 +159,10 @@ class AssertMessage(Glob):
     # Unique class ID
     id = GlobID.AssertMessage
     
+    continue_action = 0
+    restart_action = 1
+    stop_action = 2
+    
     # Struct format for packing/unpacking. Little-endian no padding.
     data_format = '<I200sI'
     

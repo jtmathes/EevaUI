@@ -60,8 +60,18 @@ class ParserThread(threading.Thread):
                     self.data_idx += 1
                     self.advance_parse()
                     
-            elif self.parse_state >= 0 and self.parse_state <= 4:
-                # Pull out CRC valid flag, glob id and both bytes of instance and packet number.
+            elif self.parse_state == 0:
+                # Pull out CRC valid flag.  Verify as kind of a 2nd verification that's its actually
+                # the start of a new message.
+                if byte == 0 or byte == 1:
+                    self.message_data[self.data_idx] = byte
+                    self.data_idx += 1
+                    self.advance_parse()
+                else:
+                    self.reset_parse() # bad flag
+                
+            elif self.parse_state >= 1 and self.parse_state <= 4:
+                # Pull out glob id and both bytes of instance and packet number.
                 self.message_data[self.data_idx] = byte
                 self.data_idx += 1
                 self.advance_parse()

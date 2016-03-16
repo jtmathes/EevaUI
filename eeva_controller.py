@@ -262,6 +262,10 @@ class EevaController:
             msg = AssertMessage.from_bytes(body)
             if msg.valid:
                 self.display_message(msg.message, 'assert')
+                if msg.action == AssertMessage.stop_action:
+                    self.display_message('Critical error, cannot continue to run.', 'assert')
+                if msg.action == AssertMessage.restart_action:
+                    self.display_message('Robot will restart...', 'assert')
         
         elif id == GlobID.DebugMessage:
             msg = DebugMessage.from_bytes(body)
