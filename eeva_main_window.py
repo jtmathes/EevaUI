@@ -208,33 +208,21 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
             self.connection_controller.connect_to_port(port_name)
         else:
             self.connection_controller.disconnect_from_port()
-           
-    @QtCore.pyqtSlot(str)
+
     def set_start_and_capture_button_text(self, text):
-        if self._need_to_switch_thread():
-            QMetaObject.invokeMethod(self, 'set_start_and_capture_button_text', Qt.QueuedConnection, Q_ARG(str, text))
-            return 
+
         self.startAndCollectButton.setText(text)
 
-    @QtCore.pyqtSlot(str)
     def set_capture_button_text(self, text):
-        if self._need_to_switch_thread():
-            QMetaObject.invokeMethod(self, 'set_capture_button_text', Qt.QueuedConnection, Q_ARG(str, text))
-            return 
-        self.collectDataButton.setText(text)
         
-    @QtCore.pyqtSlot(bool)
+        self.collectDataButton.setText(text)
+
     def set_start_and_capture_button_enabled(self, state):
-        if self._need_to_switch_thread():
-            QMetaObject.invokeMethod(self, 'set_start_and_capture_button_enabled', Qt.QueuedConnection, Q_ARG(bool, state))
-            return 
+
         self.startAndCollectButton.setEnabled(state)
 
-    @QtCore.pyqtSlot(bool)
     def set_capture_button_enabled(self, state):
-        if self._need_to_switch_thread():
-            QMetaObject.invokeMethod(self, 'set_capture_button_enabled', Qt.QueuedConnection, Q_ARG(bool, state))
-            return 
+        
         self.collectDataButton.setEnabled(state)
 
     def set_connect_button_text(self, new_text):
@@ -261,11 +249,8 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         if index >= 0:
             self.portsComboBox.setCurrentIndex(index)
         
-    @QtCore.pyqtSlot(str, str)
     def display_message(self, message, color):
-        if self._need_to_switch_thread():
-            QMetaObject.invokeMethod(self, 'display_message', Qt.QueuedConnection, Q_ARG(str, message), Q_ARG(str, color))
-            return
+
         self.messageCenterTextEdit.setTextColor(QColor(color))
         self.messageCenterTextEdit.append(message)
         
@@ -295,11 +280,8 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
     def get_controller_index(self):
         return int(self.controlComboBox.currentIndex())
         
-    @QtCore.pyqtSlot(PidParams)
     def set_pid_parameters(self, params):
-        if self._need_to_switch_thread():
-            QMetaObject.invokeMethod(self, 'set_pid_parameters', Qt.QueuedConnection, Q_ARG(PidParams, params))
-            return
+
         self.proportionalLineEdit.setText('{:.5g}'.format(params.kp))
         self.integralLineEdit.setText('{:.5g}'.format(params.ki))
         self.derivativeLineEdit.setText('{:.5g}'.format(params.kd))
@@ -307,11 +289,8 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         self.intSatLimitLineEdit.setText('{:.5g}'.format(params.integral_hilimit))
         
     # Robot Status
-    @QtCore.pyqtSlot(dict)
     def update_robot_status(self, status):
-        if self._need_to_switch_thread():
-            QMetaObject.invokeMethod(self, 'update_robot_status', Qt.QueuedConnection, Q_ARG(dict, status))
-            return
+        
         self.batteryLineEdit.setText('{:.1f}'.format(status["battery"]))
         self.rollLineEdit.setText('{:.1f}'.format(status["roll"]))
         self.pitchLineEdit.setText('{:.1f}'.format(status["pitch"]))
@@ -352,19 +331,12 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
     
     def get_data_capture_filename(self):
         return str(self.dataFileNameLineEdit.text())
-    @QtCore.pyqtSlot(str)
-    def set_data_capture_filename(self, fname):
-        if self._need_to_switch_thread():
-            QMetaObject.invokeMethod(self, 'set_data_capture_filename', Qt.QueuedConnection, Q_ARG(str, fname))
-            return 
+
+    def set_data_capture_filename(self, fname): 
         self.dataFileNameLineEdit.setText(fname)
     def need_to_generate_filename(self,):
         return bool(self.generateFileNameCheckBox.checkState())
-    @QtCore.pyqtSlot(bool)
     def set_generate_filename(self, state):
-        if self._need_to_switch_thread():
-            QMetaObject.invokeMethod(self, 'set_generate_filename', Qt.QueuedConnection, Q_ARG(bool, state))
-            return 
         self.generateFileNameCheckBox.setChecked(state)
 
     # Connection Status
@@ -470,6 +442,8 @@ class DrivingKeyFilter(QObject):
         QObject.__init__(self)
         self.controller = controller
         self.command_state = {}
+        for movement_type in DrivingCommand.possible_movements:
+            self.command_state[movement_type] = False
 
     def eventFilter(self, obj, event):
         

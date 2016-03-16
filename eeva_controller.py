@@ -3,6 +3,7 @@ import sys
 import time
 import csv
 import datetime
+import numbers
 from glob import *
 from eeva_io import *
 from validate_params import *
@@ -10,7 +11,7 @@ from version import *
 
 from PyQt4.QtCore import QTimer 
 
-DRIVING_TIMER_INTERVAL = 0.1 # seconds
+DRIVING_TIMER_INTERVAL = 0.2 # seconds
 
 class EevaController:
 
@@ -98,10 +99,13 @@ class EevaController:
                 
                 states = self.view.get_driving_command_states()
                 
-                for cmd, state in states.iteritems():
-                    if state:
-                        msg = DrivingCommand(movement_type = cmd)
-                        self.link.send(msg)
+                # Set the correct bits based on what driving keys are being pressed.
+                movement_commands = 0x00000000
+                for movement_type in DrivingCommand.possible_movements:
+                    movement_commands |= (movement_type if states[movement_type] else 0)
+
+                msg = DrivingCommand(movement_commands = movement_commands)
+                self.link.send(msg)
             
         finally:
             # Constantly reschedule timer to avoid overlapping calls
@@ -143,6 +147,9 @@ class EevaController:
             self.display_message("Error when storing ID.")
         
         self.verified_robot_id = True
+        
+        # Now that robot ID is verified request recent messages, this makes output consistent.
+        self.request_recent_text_messages_from_robot()
         
     def verify_robot_mode(self, msg):
 
@@ -253,11 +260,13 @@ class EevaController:
         
         if id == GlobID.AssertMessage:
             msg = AssertMessage.from_bytes(body)
-            self.display_message(msg.message, 'assert')
+            if msg.valid:
+                self.display_message(msg.message, 'assert')
         
         elif id == GlobID.DebugMessage:
             msg = DebugMessage.from_bytes(body)
-            self.display_message(msg.message, 'robot')
+            if msg.valid:
+                self.display_message(msg.message, 'robot')
         
         elif id == GlobID.StatusData:
             msg = StatusData.from_bytes(body)
@@ -355,6 +364,11 @@ class EevaController:
         
         # Request all instances of PID parameters.
         self.link.send(Request(PidParams.id, instance=0))
+        
+    def request_recent_text_messages_from_robot(self):
+        
+        self.link.send(Request(DebugMessage.id, instance=0))
+        self.link.send(Request(AssertMessage.id, instance=0))
     
     def display_message(self, message, source='ui'):
 
@@ -436,7 +450,10 @@ class EevaController:
                                    r.delay_usec_max, r.delay_usec_min, r.delay_usec_avg,
                                    r.run_usec_max, r.run_usec_min, r.run_usec_avg,
                                    r.interval_usec_max, r.interval_usec_min, r.interval_usec_avg,
-                                   total_run_time, percentage_run_time] 
+                                   total_run_time, percentage_run_time]
+                    for i, val in enumerate(result_list):
+                        if isinstance(val, numbers.Real):
+                            result_list[i] = round(val, 1)
                     writer.writerow(result_list) 
             self.display_message('Created {}'.format(filepath))
         except IOError:

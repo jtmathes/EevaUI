@@ -25,7 +25,7 @@ except AttributeError:
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
-        MainWindow.resize(1005, 484)
+        MainWindow.resize(1030, 484)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -626,7 +626,7 @@ class Ui_MainWindow(object):
         self.mainHorizontalLayout.addWidget(self.experimentInputGroupBox)
         self.statusGroupBox = QtGui.QGroupBox(self.layoutWidget)
         self.statusGroupBox.setEnabled(True)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.statusGroupBox.sizePolicy().hasHeightForWidth())
@@ -634,6 +634,7 @@ class Ui_MainWindow(object):
         self.statusGroupBox.setAlignment(QtCore.Qt.AlignCenter)
         self.statusGroupBox.setObjectName(_fromUtf8("statusGroupBox"))
         self.gridLayout = QtGui.QGridLayout(self.statusGroupBox)
+        self.gridLayout.setHorizontalSpacing(2)
         self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
         self.label_14 = QtGui.QLabel(self.statusGroupBox)
         self.label_14.setObjectName(_fromUtf8("label_14"))
@@ -755,6 +756,7 @@ class Ui_MainWindow(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.rAPLineEdit.sizePolicy().hasHeightForWidth())
         self.rAPLineEdit.setSizePolicy(sizePolicy)
+        self.rAPLineEdit.setText(_fromUtf8(""))
         self.rAPLineEdit.setAlignment(QtCore.Qt.AlignCenter)
         self.rAPLineEdit.setReadOnly(True)
         self.rAPLineEdit.setObjectName(_fromUtf8("rAPLineEdit"))
@@ -984,7 +986,7 @@ class Ui_MainWindow(object):
         self.gridLayout_4.addWidget(self.mainSplitter, 0, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtGui.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1005, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1030, 21))
         self.menubar.setObjectName(_fromUtf8("menubar"))
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtGui.QStatusBar(MainWindow)
@@ -1082,3 +1084,5 @@ class Ui_MainWindow(object):
         self.label_25.setText(_translate("MainWindow", "Mode", None))
         self.label_49.setText(_translate("MainWindow", "---", None))
         self.actionChange_Output_Directory.setText(_translate("MainWindow", "Change Output Directory", None))
+
+import images_rc

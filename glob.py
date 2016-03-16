@@ -34,25 +34,27 @@ class DrivingCommand(Glob):
     # Unique class ID
     id = GlobID.DrivingCommand
     
-    forward = 0
-    reverse = 1
-    turn_right = 2
-    turn_left = 3
-    stop = 4
+    forward = 1
+    reverse = 2
+    turn_right = 4
+    turn_left = 8
+    stop = 16
+    
+    possible_movements = [forward, reverse, turn_left, turn_right, stop]
     
     # Struct format for packing/unpacking. Little-endian no padding.
     data_format = '<Iff'
     
-    def __init__(self, movement_type=0, speed=0, omega=0, instance=1):
+    def __init__(self, movement_commands=0, linear_velocity=0, angular_velocity=0, instance=1):
         '''Constructor'''
         self.instance = instance
-        self.movement_type = movement_type
-        self.speed = speed
-        self.omega = omega
+        self.movement_commands = movement_commands
+        self.linear_velocity = linear_velocity
+        self.angular_velocity = angular_velocity
 
     def pack(self):
 
-        return struct.pack(DrivingCommand.data_format, self.movement_type, self.speed, self.omega)
+        return struct.pack(DrivingCommand.data_format, self.movement_commands, self.linear_velocity, self.angular_velocity)
     
 class StatusData(Glob):
     
@@ -158,7 +160,7 @@ class AssertMessage(Glob):
     id = GlobID.AssertMessage
     
     # Struct format for packing/unpacking. Little-endian no padding.
-    data_format = '<I200s'
+    data_format = '<I200sI'
     
     def __init__(self, instance=1):
         '''Constructor'''
@@ -166,7 +168,8 @@ class AssertMessage(Glob):
 
     def unpack(self, data_bytes):
         
-        self.action, self.message = struct.unpack(AssertMessage.data_format, data_bytes)
+        self.action, self.message, valid = struct.unpack(AssertMessage.data_format, data_bytes)
+        self.valid = bool(valid)
 
 class DebugMessage(Glob):
     
@@ -174,7 +177,7 @@ class DebugMessage(Glob):
     id = GlobID.DebugMessage
     
     # Struct format for packing/unpacking. Little-endian no padding.
-    data_format = '<200s'
+    data_format = '<200sI'
     
     def __init__(self, instance=1):
         '''Constructor'''
@@ -182,7 +185,8 @@ class DebugMessage(Glob):
 
     def unpack(self, data_bytes):
         
-        self.message = struct.unpack(DebugMessage.data_format, data_bytes)[0]
+        self.message, valid = struct.unpack(DebugMessage.data_format, data_bytes)
+        self.valid = bool(valid)
 
 class Modes(Glob):
     

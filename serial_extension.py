@@ -1,7 +1,7 @@
 import sys
 import glob
 import serial
-from Queue import Queue
+import Queue
 from threading import Event
 
 class SerialConnection(serial.Serial):
@@ -10,7 +10,8 @@ class SerialConnection(serial.Serial):
 
         super(SerialConnection, self).__init__(*args, **kargs)
 
-        self.receive_queue = Queue()
+        self.receive_queue = Queue.Queue()
+        self.send_queue = Queue.Queue()
         self.close_request = Event()
 
     def read(self, timeout=0):
@@ -18,9 +19,12 @@ class SerialConnection(serial.Serial):
         return self.receive_queue.get(block=True, timeout=timeout)
 
     def write(self, data):
+    
+        try:
+            serial.Serial.write(self, data)
+        except serial.SerialTimeoutException:
+            pass # data couldn't be sent.
 
-        serial.Serial.write(self, data)
-        
     def close(self):
 
         self.close_request.set()
@@ -36,7 +40,6 @@ class SerialConnection(serial.Serial):
         while True:
         
             new_data = bytearray(serial.Serial.read(self))
-            
             if new_data and len(new_data) > 0:
                 self.receive_queue.put(new_data)
             

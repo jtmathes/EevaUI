@@ -6,8 +6,17 @@ import cStringIO
 from PyQt4 import QtGui
 from PyQt4.QtGui import QStyle
 
+excepthook_active = False
+
 def excepthook(excection_type, excection_value, traceback_object):
     """Callback for any unhandled exceptions. To use set sys.excepthook = excepthook"""
+    
+    # Make sure not already showing an exception window.
+    global excepthook_active
+    if excepthook_active:
+        return
+    excepthook_active = True
+    
     separator = '-' * 50
     body_text = "An unhandled exception occurred.\nPlease report the problem to {}.\n" \
                 "(Hit Ctrl+C to copy text from dialog)".format("ner.eeva.ui@gmail.com")

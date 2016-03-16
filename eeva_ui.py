@@ -8,7 +8,7 @@ from glob_link import GlobLink
 from version import current_gui_version
 from PyQt4 import QtGui
 from exception_hook import excepthook
-import images_qr
+import images_rc
 
 if __name__ == '__main__':
 
