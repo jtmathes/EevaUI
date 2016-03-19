@@ -304,16 +304,10 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         self.lLPLineEdit.setText(str(round(status["left_linear_position"], 2)))
         self.rLVLineEdit.setText(str(round(status["right_linear_velocity"], 1)))
         self.lLVLineEdit.setText(str(round(status["left_linear_velocity"], 1)))
-        self.rCLineEdit.setText(str(round(status["right_current"], 2)))
-        self.lCLineEdit.setText(str(round(status["left_current"], 2)))
         self.rPWMLineEdit.setText(str(int(status["right_pwm"])))
         self.lPWMLineEdit.setText(str(int(status["left_pwm"])))
-        self.rTLineEdit.setText(str(int(status["right_torque"])))
-        self.lTLineEdit.setText(str(int(status["left_torque"])))
         self.rVLineEdit.setText(str(round(status["right_voltage"], 1)))
         self.lVLineEdit.setText(str(round(status["left_voltage"], 1)))
-        self.rPowerLineEdit.setText(str(round(status["right_power"], 2)))
-        self.lPowerLineEdit.setText(str(round(status["left_power"], 2)))
 
     # Data Capture
     def set_capture_rate(self, new):

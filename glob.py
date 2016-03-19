@@ -11,11 +11,11 @@ class GlobID:
     CaptureCommand = 4
     StatusData = 5
     Modes = 14
-    RobotCommand = 16
-    Wave = 19
-    PidParams = 20
-    Request = 21
-    TaskTimingResult = 22
+    RobotCommand = 15
+    Wave = 17
+    PidParams = 18
+    Request = 19
+    TaskTimingResult = 20
 
 class Glob(object):
     
@@ -62,7 +62,7 @@ class StatusData(Glob):
     id = GlobID.StatusData
     
     # Struct format for packing/unpacking. Little-endian no padding.
-    data_format = '<' + ('f' * 4) + ('B' * 4) + ('f' * 14) + 'i' + ('B' * 12)
+    data_format = '<' + ('f' * 4) + ('B' * 4) + ('f' * 10) + 'i' + ('B' * 12)
     
     def __init__(self, instance=1):
         '''Constructor'''
@@ -86,20 +86,14 @@ class StatusData(Glob):
         self.data["right_angular_position"] = math.degrees(values[11])
         self.data["left_linear_velocity"] = values[12]
         self.data["right_linear_velocity"] = values[13]
-        self.data["left_angular_velocity"] = math.degrees(values[14]) * 60.0 / 360.0 # rad/s to RPM
-        self.data["right_angular_velocity"] = math.degrees(values[15]) * 60.0 / 360.0 # rad/s to RPM
-        self.data["left_current"] = values[16]
-        self.data["right_current"] = values[17]
-        self.data["left_pwm"] = values[18] * 100 # to percentage
-        self.data["right_pwm"] = values[19] * 100 # to percentage
-        self.data["left_torque"] = values[20] * 1000 # to mNm
-        self.data["right_torque"] = values[21] * 1000 # to mNm
+        self.data["left_angular_velocity"] = math.degrees(values[14]) * 60.0 / 360.0  # rad/s to RPM
+        self.data["right_angular_velocity"] = math.degrees(values[15]) * 60.0 / 360.0  # rad/s to RPM
+        self.data["left_pwm"] = values[16] * 100  # to percentage
+        self.data["right_pwm"] = values[17] * 100  # to percentage
         self.data["left_voltage"] = self.data["battery"] * self.data["left_pwm"] / 100.0
         self.data["right_voltage"] = self.data["battery"] * self.data["right_pwm"] / 100.0
-        self.data["left_power"] = abs(self.data["left_voltage"] * self.data["left_current"])
-        self.data["right_power"] = abs(self.data["right_voltage"] * self.data["right_current"])
-        self.data["firmware_version"] = values[22]
-        robot_id_bytes = values[23:35]
+        self.data["firmware_version"] = values[18]
+        robot_id_bytes = values[19:31]
         self.data["robot_id"] = ''.join('{:02X}'.format(b) for b in robot_id_bytes)
             
 class CaptureCommand(Glob):
@@ -139,7 +133,7 @@ class CaptureData(Glob):
     id = GlobID.CaptureData
     
     # Struct format for packing/unpacking. Little-endian no padding.
-    data_format = '<' + ('f'*9)
+    data_format = '<' + ('f' * 9)
     
     def __init__(self, instance=1):
         '''Constructor'''
@@ -212,8 +206,7 @@ class Modes(Glob):
     # Experiment sub IDs. Text labels so can show on form.
     experiments = [(0, "None"),
                    (1, "Wheel Linear Speed"),
-                   (2, "Motor Current"),
-                   (3, "Wheel Angular Position")]
+                   (2, "Wheel Angular Position")]
     
     # Struct format for packing/unpacking. Little-endian no padding.
     data_format = '<BBB'
@@ -279,7 +272,7 @@ class Wave(Glob):
         self.type = kargs.get('wave_type', Wave.sine)
         self.state = kargs.get('state', Wave.stopped)
         self.value = kargs.get('wave_value', 0)
-        #self.pad = [0, 0]
+        # self.pad = [0, 0]
         self.mag = kargs.get('mag', 0)
         self.freq = kargs.get('freq', 1)
         self.duration = kargs.get('duration', 1)
@@ -287,13 +280,13 @@ class Wave(Glob):
         self.time = kargs.get('wave_time', 0)
         self.total_time = 0
         self.run_continuous = kargs.get('run_continuous', False)
-        #self.pad2 = [0, 0, 0]
+        # self.pad2 = [0, 0, 0]
         
         # Trapezoid parameters
         self.vmax = kargs.get('vmax', 0)
         self.amax = kargs.get('amax', 0)
         self.dx = kargs.get('dx', 0)
-        self.ts_and_cs = [0] * 12 # calculated on robot
+        self.ts_and_cs = [0] * 12  # calculated on robot
         
     def pack(self):
 
@@ -309,13 +302,11 @@ class PidParams(Glob):
     controllers = [(0, "Left Wheel Speed (m/s)"),
                    (1, "Right Wheel Speed (m/s)"),
                    (2, "Yaw (radians)"),
-                   (3, "Left Motor Current (amps)"),
-                   (4, "Right Motor Current (amps)"),
-                   (5, "Balance Tilt (radians)"),
-                   (6, "Balance Position (meters)"),
-                   (7, "Line Following (meters)"),
-                   (8, "Left Wheel Position (deg)"),
-                   (9, "Right Wheel Position (deg)")]
+                   (3, "Balance Tilt (radians)"),
+                   (4, "Balance Position (meters)"),
+                   (5, "Line Following (meters)"),
+                   (6, "Left Wheel Position (deg)"),
+                   (7, "Right Wheel Position (deg)")]
     
     num_controllers = len(controllers)
     
@@ -339,7 +330,7 @@ class PidParams(Glob):
 
     def pack(self):
         
-        return struct.pack(PidParams.data_format, self.kp, self.ki, self.kd, 
+        return struct.pack(PidParams.data_format, self.kp, self.ki, self.kd,
                            self.integral_lolimit, self.integral_hilimit,
                            self.lolimit, self.hilimit)
 
