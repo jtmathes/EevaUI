@@ -134,10 +134,10 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         self.controller.send_robot_command(RobotCommand.start)
 
     def sample_rate_changed(self, *args):
-        validate_capture_parameters(self)
+        validate_capture_parameters(self.controller, self)
     
     def capture_samples_edited(self, *args):
-        validate_capture_parameters(self)
+        validate_capture_parameters(self.controller, self)
         
     def open_output_directory_clicked(self):
         self.controller.open_output_directory()

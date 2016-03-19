@@ -1,12 +1,9 @@
 
-from glob import PidParams, Request
+from glob import PidParams, CaptureCommand, Request
 
 # Data capture parameters
-DEFAULT_NUM_SAMPLES = 300
-MIN_NUM_SAMPLES = 1
-MAX_NUM_SAMPLES = 2000
-FASTEST_CAPTURE_RATE = 5000.0 # Hz
-DEFAULT_CAPTURE_RATE = FASTEST_CAPTURE_RATE / 50 # Hz
+DEFAULT_NUM_SAMPLES = 500
+DEFAULT_CAPTURE_RATE = 100 # Hz
 
 # Wave parameters
 DEFAULT_WAVE_MAGNITUDE = 1
@@ -35,22 +32,23 @@ def try_parse(value, cast_type, default_value):
         value = cast_type(default_value)
     return value
 
-def validate_capture_parameters(view):
+def validate_capture_parameters(controller, view):
     
     rate = try_parse(view.get_capture_rate(), float, DEFAULT_CAPTURE_RATE)
-    rate = limit(rate, 0.001, FASTEST_CAPTURE_RATE)
+    rate = limit(rate, 0.0001, 60000) # limit to u16, actual limit is done on robot
     samples = try_parse(view.get_capture_samples(), int, DEFAULT_NUM_SAMPLES)
-    samples = limit(samples, MIN_NUM_SAMPLES, MAX_NUM_SAMPLES)
-
-    # Account for the fact the MCU can only capture at certain rates.  
-    scale = int(FASTEST_CAPTURE_RATE / rate)
-    rate = FASTEST_CAPTURE_RATE / scale
-
+    samples = limit(samples, 0, 60000) # limit to u16, actual limit is done on robot
     duration = samples / rate
 
     view.set_capture_rate(rate)
     view.set_capture_samples(samples)
     view.set_capture_duration(duration)
+    
+    # Pass capture parameters to robot for validation.
+    if controller is not None:
+        capture_command = CaptureCommand(is_start=0, paused=0, freq=rate, desired_samples=samples, total_samples=0)
+        controller.link.send(capture_command)
+        controller.link.send(Request(CaptureCommand.id))
     
     return duration
 

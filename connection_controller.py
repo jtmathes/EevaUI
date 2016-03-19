@@ -1,6 +1,7 @@
 import serial
 from glob import *
 from version import current_gui_version, compatible_versions
+from validate_params import validate_capture_parameters
 
 from PyQt4.QtCore import QTimer 
 
@@ -40,6 +41,7 @@ class ConnectionController(object):
             self.controller.stop_data_capture()
             
             self.controller.request_controller_gains_from_robot()
+            validate_capture_parameters(self.controller, self.view)
             
         except serial.SerialException as e:
             self.controller.display_message('Error {}\nTry to connect again.'.format(e))

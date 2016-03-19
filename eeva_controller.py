@@ -77,7 +77,7 @@ class EevaController:
         self.view.set_generate_filename(False)
         self.view.set_capture_rate(DEFAULT_CAPTURE_RATE)
         self.view.set_capture_samples(DEFAULT_NUM_SAMPLES)
-        validate_capture_parameters(view)
+        validate_capture_parameters(None, view)
         
         validate_wave_parameters(view)
         validate_manual_command_parameters(view)
@@ -298,8 +298,12 @@ class EevaController:
             expected_samples = msg.total_samples
             
             if len(self.capture_data) == 0 and expected_samples == 0:
-                self.display_message("No data was recorded by robot.")
-                return # nothing left to do since no data
+                # This message was returned to validate capture parameters, not to send back data.
+                # TODO this is kind of hacky
+                self.view.set_capture_rate(msg.freq)
+                self.view.set_capture_samples(msg.desired_samples)
+                self.view.set_capture_duration(float(msg.desired_samples) / msg.freq)
+                return
             elif len(self.capture_data) == 0:
                 self.display_message("Expecting {} samples but didn't receive any.".format(expected_samples))
                 return # nothing left to do since no data
