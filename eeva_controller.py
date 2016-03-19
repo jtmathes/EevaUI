@@ -468,6 +468,11 @@ class EevaController:
             self.display_message('IO Error. Filename {} is most likely invalid.'.format(filename))
 
     def open_output_directory(self):
+        
+        if self.capturing_data:
+            self.display_message("Please finish collecting data first.")
+            return
+        
         open_output_directory_in_viewer(self.session_directory, self)
         
     def request_new_port_list(self):

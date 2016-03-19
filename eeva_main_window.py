@@ -143,6 +143,11 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
         self.controller.open_output_directory()
         
     def change_output_directory_clicked(self):
+        
+        if self.controller.capturing_data:
+            self.display_message("Please finish collecting data first.", 'black')
+            return
+        
         folder_path = str(QFileDialog.getExistingDirectory(self, "Select Base Directory", directory=self.saved_base_directory))
         if folder_path:
             self.saved_base_directory = folder_path
