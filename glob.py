@@ -206,7 +206,8 @@ class Modes(Glob):
     # Experiment sub IDs. Text labels so can show on form.
     experiments = [(0, "None"),
                    (1, "Wheel Linear Speed"),
-                   (2, "Wheel Angular Position")]
+                   (2, "Wheel Angular Position"),
+                   (3, "Motor Voltage")]
     
     # Struct format for packing/unpacking. Little-endian no padding.
     data_format = '<BBB'
