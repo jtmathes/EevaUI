@@ -1,5 +1,5 @@
 
-from glob import PidParams, CaptureCommand, Request
+from eeva_glob import PidParams, CaptureCommand, Request
 
 # Data capture parameters
 DEFAULT_NUM_SAMPLES = 500

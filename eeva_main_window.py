@@ -10,7 +10,7 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import QMetaObject, QObject, QEvent, Qt, Q_ARG
 from PyQt4.QtGui import QMainWindow, QColor, QFileDialog
 from eeva_designer import Ui_MainWindow
-from glob import DrivingCommand, RobotCommand, Modes, Wave, PidParams
+from eeva_glob import DrivingCommand, RobotCommand, Modes, Wave, PidParams
 from validate_params import *
 
 class EevaMainWindow(QMainWindow, Ui_MainWindow):

@@ -17,7 +17,7 @@ class GlobID:
     Request = 19
     TaskTimingResult = 20
 
-class Glob(object):
+class EevaGlob(object):
     
     @property
     def id(self):
@@ -29,7 +29,7 @@ class Glob(object):
         obj.unpack(data_bytes)
         return obj
     
-class DrivingCommand(Glob):
+class DrivingCommand(EevaGlob):
     
     # Unique class ID
     id = GlobID.DrivingCommand
@@ -56,7 +56,7 @@ class DrivingCommand(Glob):
 
         return struct.pack(DrivingCommand.data_format, self.movement_commands, self.linear_velocity, self.angular_velocity)
     
-class StatusData(Glob):
+class StatusData(EevaGlob):
     
     # Unique class ID
     id = GlobID.StatusData
@@ -96,7 +96,7 @@ class StatusData(Glob):
         robot_id_bytes = values[19:31]
         self.data["robot_id"] = ''.join('{:02X}'.format(b) for b in robot_id_bytes)
             
-class CaptureCommand(Glob):
+class CaptureCommand(EevaGlob):
     
     # Unique class ID
     id = GlobID.CaptureCommand
@@ -127,7 +127,7 @@ class CaptureCommand(Glob):
         self.desired_samples = values[3]
         self.total_samples = values[4]
         
-class CaptureData(Glob):
+class CaptureData(EevaGlob):
     
     # Unique class ID
     id = GlobID.CaptureData
@@ -148,7 +148,7 @@ class CaptureData(Glob):
     def as_tuple(self):
         return self.values
         
-class AssertMessage(Glob):
+class AssertMessage(EevaGlob):
     
     # Unique class ID
     id = GlobID.AssertMessage
@@ -169,7 +169,7 @@ class AssertMessage(Glob):
         self.action, self.message, valid = struct.unpack(AssertMessage.data_format, data_bytes)
         self.valid = bool(valid)
 
-class DebugMessage(Glob):
+class DebugMessage(EevaGlob):
     
     # Unique class ID
     id = GlobID.DebugMessage
@@ -186,7 +186,7 @@ class DebugMessage(Glob):
         self.message, valid = struct.unpack(DebugMessage.data_format, data_bytes)
         self.valid = bool(valid)
 
-class Modes(Glob):
+class Modes(EevaGlob):
     
     # Unique class ID
     id = GlobID.Modes
@@ -223,7 +223,7 @@ class Modes(Glob):
 
         return struct.pack(Modes.data_format, self.main_mode, self.sub_mode, self.state)
 
-class RobotCommand(Glob):
+class RobotCommand(EevaGlob):
     
     # Unique class ID
     id = GlobID.RobotCommand
@@ -245,7 +245,7 @@ class RobotCommand(Glob):
 
         return struct.pack(RobotCommand.data_format, self.command)
     
-class Wave(Glob):
+class Wave(EevaGlob):
     
     # Unique class ID
     id = GlobID.Wave
@@ -294,7 +294,7 @@ class Wave(Glob):
         return struct.pack(Wave.data_format, self.type, self.state, 0, 0, self.value, self.mag, self.freq, self.duration,
                            self.offset, self.time, self.total_time, self.run_continuous, 0, 0, 0, self.vmax, self.amax, self.dx, *self.ts_and_cs)
 
-class PidParams(Glob):
+class PidParams(EevaGlob):
     
     # Unique class ID
     id = GlobID.PidParams
@@ -349,7 +349,7 @@ class PidParams(Glob):
         # Mark that glob is now valid.
         self.received = True
         
-class Request(Glob):
+class Request(EevaGlob):
     
     # Special ID for requesting globs
     id = GlobID.Request
@@ -366,7 +366,7 @@ class Request(Glob):
 
         return struct.pack(Request.data_format, self.requested_id)
 
-class TaskTimingResult(Glob):
+class TaskTimingResult(EevaGlob):
     
     # Unique class ID
     id = GlobID.TaskTimingResult

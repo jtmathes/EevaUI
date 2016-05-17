@@ -1,5 +1,5 @@
 import sys
-import glob
+import eeva_glob
 import serial
 import Queue
 from threading import Event

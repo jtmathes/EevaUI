@@ -4,7 +4,7 @@ import time
 import csv
 import datetime
 import numbers
-from glob import *
+from eeva_glob import *
 from eeva_io import *
 from validate_params import *
 from version import *

@@ -1,5 +1,5 @@
 import serial
-from glob import *
+from eeva_glob import *
 from version import current_gui_version, compatible_versions
 from validate_params import validate_capture_parameters
 
