@@ -103,8 +103,11 @@ class ConnectionController(object):
                 
             no_bytes_received_duration = self.num_times_no_bytes_received * LINK_STATS_TIMER_INTERVAL
             
-            if no_bytes_received_duration >= 1.25:
+            if no_bytes_received_duration >= 5:
                 self.controller.display_message("Eeva not responding...")
-                self.disconnect_from_port()
-                self.controller.display_message("If robot is still on and was always in range then make sure your operating system isn't using a power-save mode for bluetooth.")
+                # Reset flag to avoid constantly printing messages.
+                self.num_times_no_bytes_received = 0
+
+                #self.disconnect_from_port()
+                #self.controller.display_message("If robot is still on and was always in range then make sure your operating system isn't using a power-save mode for bluetooth.")
                 
