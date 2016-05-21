@@ -219,7 +219,7 @@ class GlobLink(QObject):
     
     def connection_open(self):
         
-        return self.connection and self.connection.is_open()
+        return self.connection and self.connection.connection_is_open()
     
     def send(self, glob):
         

@@ -29,7 +29,7 @@ class SerialConnection(serial.Serial):
 
         self.close_request.set()
 
-    def is_open(self):
+    def connection_is_open(self):
         
         return serial.Serial.isOpen(self) and not self.close_request.is_set()
     

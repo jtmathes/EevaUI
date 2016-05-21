@@ -1,0 +1,5 @@
+
+copy and paste this at EevaUI/ (i.e. one level above this folder)
+
+pyinstaller --runtime-hook rthook_pyqt4.py eeva_ui.py --windowed --onefile
+
