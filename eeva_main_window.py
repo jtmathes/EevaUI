@@ -205,8 +205,7 @@ class EevaMainWindow(QMainWindow, Ui_MainWindow):
     
     def connect_button_clicked(self):
         
-        if str(self.connectButton.text()).lower() == 'connect':
-            # TODO - would be better to request these from the robot
+        if str(self.connectButton.text()) == self.connection_controller.connect_text:
             self.balanceRadioButton.setChecked(True)
             self.experimentComboBox.setCurrentIndex(0)
             port_name = str(self.portsComboBox.currentText())

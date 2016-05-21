@@ -15,6 +15,9 @@ class ConnectionController(object):
         self.controller = main_controller
         self.link = link
         
+        self.connect_text = "Connect to Eeva"
+        self.disconnect_text = "Disconnect"
+        
         # fields for tracking link stats
         self.last_bytes_tx = 0
         self.last_bytes_rx = 0
@@ -26,6 +29,7 @@ class ConnectionController(object):
         
     def set_view(self, view):
         self.view = view
+        self.view.set_connect_button_text(self.connect_text)
         
     def connect_to_port(self, port_name):
         
@@ -50,7 +54,7 @@ class ConnectionController(object):
             
         if self.link_connected:
             self.controller.display_message("Success")
-            self.view.set_connect_button_text('Disconnect')
+            self.view.set_connect_button_text(self.disconnect_text)
             self.controller.reset_controller()
             # Reset fields of connection controller.
             self.last_bytes_tx = 0
@@ -61,7 +65,7 @@ class ConnectionController(object):
         
         self.link.disconnect()
         self.link_connected = False
-        self.view.set_connect_button_text('Connect')
+        self.view.set_connect_button_text(self.connect_text)
         self.controller.display_message('Disconnected')
 
     def start_link_timer(self):
