@@ -44,11 +44,15 @@ def validate_capture_parameters(controller, view):
     view.set_capture_samples(samples)
     view.set_capture_duration(duration)
     
-    # Pass capture parameters to robot for validation.
+    
     if controller is not None:
-        capture_command = CaptureCommand(is_start=0, paused=0, freq=rate, desired_samples=samples, total_samples=0)
-        controller.link.send(capture_command)
-        controller.link.send(Request(CaptureCommand.id))
+        if controller.capturing_data:
+            controller.display_message('Cannot validate capture settings while actively capturing data...')
+        else:
+            # Pass capture parameters to robot for validation.
+            capture_command = CaptureCommand(is_start=0, paused=0, freq=rate, desired_samples=samples, total_samples=0)
+            controller.link.send(capture_command)
+            controller.link.send(Request(CaptureCommand.id))
     
     return duration
 

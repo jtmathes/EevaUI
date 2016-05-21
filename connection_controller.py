@@ -51,9 +51,11 @@ class ConnectionController(object):
         if self.link_connected:
             self.controller.display_message("Success")
             self.view.set_connect_button_text('Disconnect')
-            # make sure flag is reset so GUI verifies firmware version
-            self.controller.verified_firmware_version = False
-            self.controller.verified_robot_id = False
+            self.controller.reset_controller()
+            # Reset fields of connection controller.
+            self.last_bytes_tx = 0
+            self.last_bytes_rx = 0
+            self.num_times_no_bytes_received = 0
             
     def disconnect_from_port(self):
         

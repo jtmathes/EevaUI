@@ -59,6 +59,17 @@ class EevaController:
         
         self.initialize_view(view)
         
+    def reset_controller(self):
+        # Reset stateful fields back to default values. Should be called whenever re-connect to robot.
+        self.capture_data = []
+        self.task_timing_results = []
+        self.capturing_data = False
+        self.pid_params = [PidParams()] * PidParams.num_controllers
+        self.show_current_pid_params()
+        self.verified_firmware_version = False
+        self.verified_robot_id = False
+        self.last_mode_change_time = 0
+        
     def initialize_view(self, view):
         
         self.display_message('GUI version: {}'.format(current_gui_version))
@@ -297,7 +308,7 @@ class EevaController:
             msg = CaptureCommand.from_bytes(body)
             expected_samples = msg.total_samples
             
-            if len(self.capture_data) == 0 and expected_samples == 0:
+            if not self.capturing_data and len(self.capture_data) == 0:
                 # This message was returned to validate capture parameters, not to send back data.
                 # TODO this is kind of hacky
                 self.view.set_capture_rate(msg.freq)
