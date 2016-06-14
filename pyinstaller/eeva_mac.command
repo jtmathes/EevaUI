@@ -22,4 +22,9 @@ hash sip 2>/dev/null && echo Found: SIP || { echo Installing SIP…; brew instal
 
 # Script.
 echo Making EEVA GUI application…
-pyinstaller --runtime-hook rthook_pyqt4.py eeva_ui.py --windowed --onefile --icon resources/NERLogo.icns
+pyinstaller --hidden-import sip \
+	--runtime-hook rthook_pyqt4.py \
+	--windowed \
+	--onefile \
+	--icon resources/NERLogo.icns \
+	eeva_ui.py 
