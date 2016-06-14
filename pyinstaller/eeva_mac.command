@@ -28,9 +28,13 @@ brew info pyqt &>/dev/null && echo Found: PyQt || { echo Installing PyQt...; bre
 # Script.
 echo Making EEVA GUI application...
 pyinstaller --hidden-import sip \
-	--runtime-hook rthook_pyqt4.py \
 	--windowed \
+	--clean \
+	--debug \
+	--log-level WARN \
+	--noupx \
+	--runtime-hook rthook_pyqt4.py \
 	--onefile \
 	--noconfirm \
 	--icon resources/NERLogo.icns \
-	eeva_ui.py 
+	eeva_ui.py 	
