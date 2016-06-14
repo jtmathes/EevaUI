@@ -4,8 +4,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR; cd ..; echo $PWD
 
 # Installs & utilizes the xcode developer environment.
-#echo Using Xcode…
-#xcode-select —-install
+echo -n Xcode dev:  && xcode-select -p || { echo Installing command line tools…; xcode-select —-install; }
 
 # Installs pip to install pyinstaller & sip.
 hash pip 2>/dev/null && echo Found: pip || { echo Installing pip…; sudo easy_install pip; }
