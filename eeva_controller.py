@@ -308,7 +308,7 @@ class EevaController:
             msg = CaptureCommand.from_bytes(body)
             expected_samples = msg.total_samples
             
-            if not self.capturing_data and len(self.capture_data) == 0:
+            if (not self.capturing_data and len(self.capture_data) == 0) or (expected_samples == 0):
                 # This message was returned to validate capture parameters, not to send back data.
                 # TODO this is kind of hacky
                 self.view.set_capture_rate(msg.freq)
