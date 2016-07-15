@@ -37,4 +37,5 @@ pyinstaller --hidden-import sip \
 	--onefile \
 	--noconfirm \
 	--icon resources/NERLogo.icns \
-	eeva_ui.py 	
+	eeva_ui.py 
+#|| { echo Application creation failed; sleep 2; }
